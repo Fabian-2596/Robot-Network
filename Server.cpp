@@ -11,6 +11,7 @@ const int PORT = 8080;
 
 void handle_request(int client_socket) {
     char buffer[1024] = {0};
+    auto start_time = std::chrono::high_resolution_clock::now();
     read(client_socket, buffer, sizeof(buffer));
     istringstream request(buffer);
     string request_type, path, http_version;
@@ -40,8 +41,10 @@ void handle_request(int client_socket) {
 		else{
 			response = "HTTP/1.1 404 Not Found\r\n\r\nNicht gefunden";
 			}
-			
         write(client_socket, response.c_str(), response.length());
+        auto end_time = chrono::high_resolution_clock::now();
+        chrono::duration<double> rtt = end_time - start_time;
+        cout << "RTT: " << rtt.count() << " seconds" << endl;
     }
 
     if (request_type == "POST") {
