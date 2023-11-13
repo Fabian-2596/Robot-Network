@@ -12,7 +12,6 @@ const int PORT = 8080;
 void handle_request(int client_socket) {
     char buffer[1024] = {0};
     read(client_socket, buffer, sizeof(buffer));
-
     istringstream request(buffer);
     string request_type, path, http_version;
     request >> request_type >> path >> http_version;
