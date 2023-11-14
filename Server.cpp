@@ -60,19 +60,11 @@ int main() {
     struct sockaddr_in server_address, client_address;
 
     server_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (server_socket == -1) {
-        cerr << "Socket creation failed." << endl;
-        return -1;
-    }
-
     server_address.sin_family = AF_INET;
     server_address.sin_addr.s_addr = INADDR_ANY;
     server_address.sin_port = htons(PORT);
-
     bind(server_socket, (struct sockaddr*)&server_address, sizeof(server_address));
     listen(server_socket, 5);
-
-    cout << "Server listening on port " << PORT << "..." << endl;
 
     while (true) {
         socklen_t client_address_len = sizeof(client_address);
