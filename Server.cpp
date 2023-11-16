@@ -5,9 +5,12 @@
 #include <sstream>
 #include <string>
 #include <cstring>
+#include <vector>
+#include <chrono>
 
 using namespace std;
 const int PORT = 8080;
+vector<string> postdata;
 
 void handle_request(int client_socket) {
     char buffer[1024] = {0};
@@ -18,7 +21,7 @@ void handle_request(int client_socket) {
     request >> request_type >> path >> http_version;
 
     if (request_type != "GET" && request_type != "POST") {
-        string response = "HTTP/1.1 400 Bad Request\r\n\r\nUnsupported Request";
+        string response = "HTTP/1.1 400 Bad Request\r\n\r\nError 400";
         write(client_socket, response.c_str(), response.length());
         close(client_socket);
         return;
@@ -44,14 +47,30 @@ void handle_request(int client_socket) {
         write(client_socket, response.c_str(), response.length());
         auto end_time = chrono::high_resolution_clock::now();
         chrono::duration<double> rtt = end_time - start_time;
-        cout << "RTT: " << rtt.count() << " seconds" << endl;
+        cout << "RTT Get: " << rtt.count()*1000 << " mseconds" << endl;
     }
-
+  
     if (request_type == "POST") {
-        string response = "HTTP/1.1 200 OK\r\n\r\nData received and stored successfully";
+        string line;
+        string data;
+        while (getline(request, line)) {
+            if (line.substr(0, 14) == "Content-Length") {
+                while(!request.eof()){
+                    getline(request,line);
+                    data = data + line;
+                }
+            }
+        }
+        string response = "HTTP/1.1 200 OK\r\n\r\nDaten erhalten : " + data;
+        postdata.push_back(data);
         write(client_socket, response.c_str(), response.length());
+        auto end_time = chrono::high_resolution_clock::now();
+        chrono::duration<double> rtt = end_time - start_time;
+        cout << "RTT Post: " << rtt.count()*1000 << " mseconds" << endl;
+        for(int i = 0; i <= postdata.size(); i++){
+            cout << postdata[i] << endl;
+        }
     }
-
     close(client_socket);
 }
 
