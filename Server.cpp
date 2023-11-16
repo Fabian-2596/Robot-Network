@@ -5,14 +5,15 @@
 #include <sstream>
 #include <string>
 #include <cstring>
+#include <chrono>
 
 using namespace std;
 const int PORT = 8080;
 
 void handle_request(int client_socket) {
     char buffer[1024] = {0};
-    auto start_time = chrono::high_resolution_clock::now();
     read(client_socket, buffer, sizeof(buffer));
+    auto start_time = chrono::high_resolution_clock::now();
     istringstream request(buffer);
     string request_type, path, http_version;
     request >> request_type >> path >> http_version;
@@ -26,7 +27,11 @@ void handle_request(int client_socket) {
 
     if (request_type == "GET") {
 		string response;
-        if(path == "/status"){
+        if (path == "/start"){
+            response = "HTTP/1.1 200 OK\r\n\r\n  <input type=\"submit\" value=\"GET\" name=\"GET\" formmethod=\"get\" formtarget=\"_self\" />\n"
+                       "  <input type=\"submit\" value=\"POST\" name=\"POST\" formmethod=\"post\" formtarget=\"_self\" />";
+        }
+        else if(path == "/status"){
 			response = "HTTP/1.1 200 OK\r\n\r\nSystem Status: Alle Roboter sind aktiv";
 		}
 		else if(path == "/captain"){
@@ -44,7 +49,7 @@ void handle_request(int client_socket) {
         write(client_socket, response.c_str(), response.length());
         auto end_time = chrono::high_resolution_clock::now();
         chrono::duration<double> rtt = end_time - start_time;
-        cout << "RTT: " << rtt.count() << " seconds" << endl;
+        cout << "RTT: " << rtt.count()*1000 << " milliseconds" << endl;
     }
 
     if (request_type == "POST") {
