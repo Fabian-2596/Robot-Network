@@ -51,14 +51,10 @@ void handle_request(int client_socket) {
     }
   
     if (request_type == "POST") {
-        string line;
         string data;
-        while (getline(request, line)) {
-            if (line.substr(0, 14) == "Content-Length") {
-                while(!request.eof()){
-                    getline(request,line);
-                    data = data + line;
-                }
+        while (getline(request, data)) {
+            if (data.substr(0, 14) == "Content-Length") {
+                    getline(request,data);
             }
         }
         string response = "HTTP/1.1 200 OK\r\n\r\nDaten erhalten : " + data;
