@@ -7,15 +7,17 @@
 #include <cstring>
 #include <vector>
 #include <chrono>
-#include "DB.cpp"
+#include <thread>
+
+#include "DB/DB.cpp"
 
 using namespace std;
+
 const int PORT = 8080;
 DB myDB{};
 
 void handle_request(int client_socket) {
     char buffer[1024] = {0};
-    vector<string> postdata;
     read(client_socket, buffer, sizeof(buffer));
     auto start_time = chrono::high_resolution_clock::now();
 
@@ -61,14 +63,13 @@ void handle_request(int client_socket) {
             }
         }
         string response = "HTTP/1.1 200 OK\r\n\r\nDaten erhalten : " + data;
-        postdata.push_back(data);
+        myDB.addPOSTData(data);
+        myDB.persist();
         write(client_socket, response.c_str(), response.length());
         auto end_time = chrono::high_resolution_clock::now();
         chrono::duration<double> rtt = end_time - start_time;
         cout << "RTT Post: " << rtt.count()*1000 << " mseconds" << endl;
-        for(int i = 0; i <= postdata.size(); i++){
-            cout << postdata[i] << endl;
-        }
+        cout << data << endl;
     }
     close(client_socket);
 }
@@ -87,13 +88,16 @@ int main() {
     while (true) {
         socklen_t client_address_len = sizeof(client_address);
 
+        cout << "Controller waiting" << endl;
         client_socket = accept(server_socket, (struct sockaddr*)&client_address, &client_address_len);
 
         if (client_socket < 0) {
             cerr << "Error in connection acceptance." << endl;
             return -1;
         }
-        handle_request(client_socket);
+
+        thread new_thread(handle_request, client_socket);
+        new_thread.join();
     }
 
     close(server_socket);
