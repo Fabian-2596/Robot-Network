@@ -16,7 +16,8 @@ using namespace std;
 const int PORT = 8080;
 DB myDB{};
 
-void handle_request(int client_socket) {
+void handle_request(int client_socket, int time) {
+    this_thread::sleep_for(chrono::seconds(time));
     char buffer[1024] = {0};
     read(client_socket, buffer, sizeof(buffer));
     auto start_time = chrono::high_resolution_clock::now();
@@ -35,19 +36,31 @@ void handle_request(int client_socket) {
     if (request_type == "GET") {
 		string response;
         if(path == "/status"){
-			response = "HTTP/1.1 200 OK\r\n\r\nSystem Status: Alle Roboter sind aktiv";
+            int cnt_pl = myDB.getCountSpieler();
+            switch (cnt_pl)
+            {
+            case 0:
+                response = "HTTP/1.1 200 OK\r\n\r\nSystem Status: Im Moment ist KEIN Roboter aktiv";
+                break;
+            case 1:
+                response = "HTTP/1.1 200 OK\r\n\r\nSystem Status: Im Moment ist nur 1 Roboter aktiv";
+                break;
+            default:
+                response = "HTTP/1.1 200 OK\r\n\r\nSystem Status: Im Moment sind " + to_string(cnt_pl) + " Roboter aktiv";
+                break;
+            }
 		}
 		else if(path == "/captain"){
-			response = "HTTP/1.1 200 OK\r\n\r\nDer aktuelle Kapitän ist T-800";
+			response = "HTTP/1.1 200 OK\r\n\r\nDer aktuelle Kapitän ist " + myDB.getCaptain().player.name;
 			}
 		else if(path == "/controller"){
-			response = "HTTP/1.1 200 OK\r\n\r\nController Status: Der Zustand des Controllers ist Gesund";
+			response = "HTTP/1.1 200 OK\r\n\r\nController Status: Der Zustand des Controllers ist \"" + myDB.getConStatus() + "\"";
 			}
 		else if(path == "/election"){
-			response = "HTTP/1.1 200 OK\r\n\r\nNeue Kapitänswahl wird angestoßen";
+			response = "HTTP/1.1 200 OK\r\n\r\nNeue Kapitänswahl wird angestoßen (Noch keine Funktion)";
 		}	
 		else{
-			response = "HTTP/1.1 404 Not Found\r\n\r\nNicht gefunden";
+			response = "HTTP/1.1 404 Not Found\r\n\r\nHier gibt es nichts zu finden";
 			}
         write(client_socket, response.c_str(), response.length());
         auto end_time = chrono::high_resolution_clock::now();
@@ -64,7 +77,6 @@ void handle_request(int client_socket) {
         }
         string response = "HTTP/1.1 200 OK\r\n\r\nDaten erhalten : " + data;
         myDB.addPOSTData(data);
-        myDB.persist();
         write(client_socket, response.c_str(), response.length());
         auto end_time = chrono::high_resolution_clock::now();
         chrono::duration<double> rtt = end_time - start_time;
@@ -89,18 +101,22 @@ int main() {
         socklen_t client_address_len = sizeof(client_address);
 
         cout << "Controller waiting" << endl;
+        myDB.setConStatus("Wartend");
         client_socket = accept(server_socket, (struct sockaddr*)&client_address, &client_address_len);
 
         if (client_socket < 0) {
             cerr << "Error in connection acceptance." << endl;
             return -1;
         }
+        myDB.setConStatus("Verarbeitend");
 
-        thread new_thread(handle_request, client_socket);
-        new_thread.join();
+        thread new_thread(handle_request, client_socket, 0);
+        new_thread.detach();
+        //cout << "Thread " << new_thread.get_id() << " erstellt" << endl; 
+        myDB.setConStatus("Fertig");
     }
-
     close(server_socket);
+    myDB.setConStatus("Beendet");
 
     return 0;
 }

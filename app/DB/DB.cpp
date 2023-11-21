@@ -5,60 +5,105 @@
 #include <fstream>
 using namespace std;
 
-struct structCaptain
-{
+const string $POSTDATAPATH = "DB/POSTData.txt"; 
+
+//TODO: Struktur anpassen/verbessern
+struct Player{
+  string name;
 };
-struct structMannschaft
+struct Captain
 {
+  Player player;
+};
+struct Team
+{
+  Captain captain;
+  vector<Player> team;
 };
 
-enum status
-{
-  OK,
-  Building,
-  Crashed,
-  ShutDown
-};
 class DB
 {
 
 private:
-  structCaptain captain;
-  structMannschaft mannschaft;
-  status controllerStatus;
+  Captain captain;
+  Team mannschaft;
+  string controllerStatus;
   int countSpieler;
   vector<string> POSTData;
 
 public:
-  DB(){};
-  ~DB(){persist();};
+  DB();
+  ~DB();
 
-  structCaptain getCaptain() { return captain; }
-  structMannschaft getMannschaft() { return mannschaft; }
-  status getConStatus() { return controllerStatus; }
+  Captain getCaptain() { return captain; }
+  Team getMannschaft() { return mannschaft; }
+  string getConStatus() {return controllerStatus;};
   int getCountSpieler() { return countSpieler; }
   vector<string> getPOSTData() { return POSTData; }
 
-  void setCaptain(structCaptain capt) { this->captain = capt; }
-  void setMannschaft(structMannschaft mann) { this->mannschaft = mann; }
-  void setConStatus(int stat) { this->controllerStatus = status(stat); }
+  void setCaptain(Captain capt) { this->captain = capt; }
+  void setMannschaft(Team mann) { this->mannschaft = mann; }
+  void setConStatus(string stat) { this->controllerStatus = stat; }
   void setCountSpieler(int count) { this->countSpieler = count; }
 
   void addPOSTData(string postData) { this->POSTData.push_back(postData); }
 
-  void persist();
+  void persistPOST();
+  vector<string> readPOSTtxt();
 };
 
-void DB::persist()
+DB::DB(){
+  Player pl{};
+  pl.name = "Tony Kroos";
+
+  Captain cp{};
+  cp.player = pl;
+  this->captain = cp;
+
+  Team mann{};
+  this->mannschaft = mann;
+
+  this->controllerStatus = "Von Contructor erstellt";
+
+  this->countSpieler = 1;
+
+  this->POSTData = readPOSTtxt();
+}
+
+DB::~DB(){
+
+  persistPOST();
+
+}
+
+void DB::persistPOST()
 {
 
-  ofstream DBFile("DB/POSTData.txt");
+  ofstream DBFile($POSTDATAPATH);
 
-  //Persist each POSTData Entry
+  //Persiste alle POSTData Einträge
   for (int i{}; i < this->POSTData.size(); ++i)
   {
     DBFile << this->POSTData[i] << endl;
   }
 
   DBFile.close();
+
+  cout << "POST-Daten wurden gesichert" << endl;
+}
+
+
+vector<string> DB::readPOSTtxt(){
+
+  vector<string> POSTData{};
+  string temp{};
+
+  ifstream DBFile($POSTDATAPATH);
+
+  while (getline(DBFile,temp)){
+    POSTData.push_back(temp);
+  }
+
+  return POSTData;
+
 }
