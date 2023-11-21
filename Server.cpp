@@ -5,21 +5,23 @@
 #include <sstream>
 #include <string>
 #include <cstring>
+#include <vector>
 #include <chrono>
 
 using namespace std;
 const int PORT = 8080;
+vector<string> postdata;
 
 void handle_request(int client_socket) {
     char buffer[1024] = {0};
-    read(client_socket, buffer, sizeof(buffer));
     auto start_time = chrono::high_resolution_clock::now();
+    read(client_socket, buffer, sizeof(buffer));
     istringstream request(buffer);
     string request_type, path, http_version;
     request >> request_type >> path >> http_version;
 
     if (request_type != "GET" && request_type != "POST") {
-        string response = "HTTP/1.1 400 Bad Request\r\n\r\nUnsupported Request";
+        string response = "HTTP/1.1 400 Bad Request\r\n\r\nError 400";
         write(client_socket, response.c_str(), response.length());
         close(client_socket);
         return;
@@ -27,11 +29,7 @@ void handle_request(int client_socket) {
 
     if (request_type == "GET") {
 		string response;
-        if (path == "/start"){
-            response = "HTTP/1.1 200 OK\r\n\r\n  <input type=\"submit\" value=\"GET\" name=\"GET\" formmethod=\"get\" formtarget=\"_self\" />\n"
-                       "  <input type=\"submit\" value=\"POST\" name=\"POST\" formmethod=\"post\" formtarget=\"_self\" />";
-        }
-        else if(path == "/status"){
+        if(path == "/status"){
 			response = "HTTP/1.1 200 OK\r\n\r\nSystem Status: Alle Roboter sind aktiv";
 		}
 		else if(path == "/captain"){
@@ -49,14 +47,26 @@ void handle_request(int client_socket) {
         write(client_socket, response.c_str(), response.length());
         auto end_time = chrono::high_resolution_clock::now();
         chrono::duration<double> rtt = end_time - start_time;
-        cout << "RTT: " << rtt.count()*1000 << " milliseconds" << endl;
+        cout << "RTT Get: " << rtt.count()*1000 << " mseconds" << endl;
     }
-
+  
     if (request_type == "POST") {
-        string response = "HTTP/1.1 200 OK\r\n\r\nData received and stored successfully";
+        string data;
+        while (getline(request, data)) {
+            if (data.substr(0, 14) == "Content-Length") {
+                    getline(request,data);
+            }
+        }
+        string response = "HTTP/1.1 200 OK\r\n\r\nDaten erhalten : " + data;
+        postdata.push_back(data);
         write(client_socket, response.c_str(), response.length());
+        auto end_time = chrono::high_resolution_clock::now();
+        chrono::duration<double> rtt = end_time - start_time;
+        cout << "RTT Post: " << rtt.count()*1000 << " mseconds" << endl;
+        for(int i = 0; i <= postdata.size(); i++){
+            cout << postdata[i] << endl;
+        }
     }
-
     close(client_socket);
 }
 
