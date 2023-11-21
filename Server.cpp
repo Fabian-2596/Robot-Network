@@ -7,15 +7,18 @@
 #include <cstring>
 #include <vector>
 #include <chrono>
+#include "DB.cpp"
 
 using namespace std;
 const int PORT = 8080;
-vector<string> postdata;
+DB myDB{};
 
 void handle_request(int client_socket) {
     char buffer[1024] = {0};
-    auto start_time = chrono::high_resolution_clock::now();
+    vector<string> postdata;
     read(client_socket, buffer, sizeof(buffer));
+    auto start_time = chrono::high_resolution_clock::now();
+
     istringstream request(buffer);
     string request_type, path, http_version;
     request >> request_type >> path >> http_version;
