@@ -16,8 +16,8 @@ using namespace std;
 const int PORT = 8080;
 DB myDB{};
 
-void handle_request(int client_socket, int time) {
-    this_thread::sleep_for(chrono::seconds(time));
+void handle_request(int client_socket) {
+    //this_thread::sleep_for(chrono::seconds(time));
     char buffer[1024] = {0};
     read(client_socket, buffer, sizeof(buffer));
     auto start_time = chrono::high_resolution_clock::now();
@@ -77,6 +77,7 @@ void handle_request(int client_socket, int time) {
         }
         string response = "HTTP/1.1 200 OK\r\n\r\nDaten erhalten : " + data;
         myDB.addPOSTData(data);
+        myDB.persistPOST();
         write(client_socket, response.c_str(), response.length());
         auto end_time = chrono::high_resolution_clock::now();
         chrono::duration<double> rtt = end_time - start_time;
@@ -84,6 +85,7 @@ void handle_request(int client_socket, int time) {
         cout << data << endl;
     }
     close(client_socket);
+
 }
 
 int main() {
@@ -100,23 +102,24 @@ int main() {
     while (true) {
         socklen_t client_address_len = sizeof(client_address);
 
-        cout << "Controller waiting" << endl;
-        myDB.setConStatus("Wartend");
+        cout << "Controller waiting for connections" << endl;
+        myDB.setConStatus("waiting");
         client_socket = accept(server_socket, (struct sockaddr*)&client_address, &client_address_len);
 
         if (client_socket < 0) {
             cerr << "Error in connection acceptance." << endl;
             return -1;
         }
-        myDB.setConStatus("Verarbeitend");
+        myDB.setConStatus("processind");
 
-        thread new_thread(handle_request, client_socket, 0);
+        thread new_thread(handle_request, client_socket);
+        cout << "Thread " << new_thread.get_id() << " erstellt" << endl; 
         new_thread.detach();
-        //cout << "Thread " << new_thread.get_id() << " erstellt" << endl; 
-        myDB.setConStatus("Fertig");
+        
+        myDB.setConStatus("task finished");
     }
     close(server_socket);
-    myDB.setConStatus("Beendet");
+    myDB.setConStatus("exited");
 
     return 0;
 }

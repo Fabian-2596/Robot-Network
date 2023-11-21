@@ -31,6 +31,8 @@ private:
   int countSpieler;
   vector<string> POSTData;
 
+  bool txt_editable = true;
+
 public:
   DB();
   ~DB();
@@ -78,6 +80,8 @@ DB::~DB(){
 
 void DB::persistPOST()
 {
+  while (txt_editable = false){}
+  txt_editable = false;
 
   ofstream DBFile($POSTDATAPATH);
 
@@ -88,6 +92,7 @@ void DB::persistPOST()
   }
 
   DBFile.close();
+  txt_editable = true;
 
   cout << "POST-Daten wurden gesichert" << endl;
 }
