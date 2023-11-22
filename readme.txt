@@ -10,4 +10,4 @@ To start election for a new captain localhost:8080/election
 
 Tests:
 Getestet wird mit dem Konsolen-Programm "ApacheBench"
-sudo apt-get 
+ab -n 10000 -c 100 "https://localhost:8080/"

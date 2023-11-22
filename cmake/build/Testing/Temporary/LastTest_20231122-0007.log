@@ -1,0 +1,18 @@
+Start testing: Nov 22 03:11 CET
+----------------------------------------------------------
+1/1 Testing: healthCheck
+1/1 Test: healthCheck
+Command: "/home/thomas/VS/cmake/build/testP1" "test/testP1.cpp"
+Directory: /home/thomas/VS/cmake/build
+"healthCheck" start time: Nov 22 03:11 CET
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Failed.
+"healthCheck" end time: Nov 22 03:11 CET
+"healthCheck" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Nov 22 03:11 CET

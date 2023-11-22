@@ -1,0 +1,42 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/thomas/VS/app/DB/DB.cpp
+string
+-
+vector
+-
+iostream
+-
+fstream
+-
+
+/home/thomas/VS/app/Server.cpp
+iostream
+-
+unistd.h
+-
+sys/socket.h
+-
+arpa/inet.h
+-
+sstream
+-
+string
+-
+cstring
+-
+vector
+-
+chrono
+-
+thread
+-
+DB/DB.cpp
+/home/thomas/VS/app/DB/DB.cpp
+

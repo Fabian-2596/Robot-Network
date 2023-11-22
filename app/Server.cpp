@@ -58,7 +58,17 @@ void handle_request(int client_socket) {
 			}
 		else if(path == "/election"){
 			response = "HTTP/1.1 200 OK\r\n\r\nNeue Kapitänswahl wird angestoßen (Noch keine Funktion)";
-		}	
+		}
+        else if(path == "/lastPOST"){
+            response = "HTTP/1.1 200 OK\r\n\r\n";
+            if(myDB.getPOSTData().empty()){
+                response = response + "noInputYet";
+            }else
+            {
+                response = response + myDB.getPOSTData().back();
+            }
+            
+        }
 		else{
 			response = "HTTP/1.1 404 Not Found\r\n\r\nHier gibt es nichts zu finden";
 			}

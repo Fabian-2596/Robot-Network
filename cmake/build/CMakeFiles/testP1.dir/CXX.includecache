@@ -1,0 +1,24 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/thomas/VS/test/testP1.cpp
+arpa/inet.h
+-
+stdio.h
+-
+string.h
+-
+sys/socket.h
+-
+unistd.h
+-
+sstream
+-
+string
+-
+

@@ -1,0 +1,3 @@
+healthCheck 2 0.000927449
+---
+healthCheck
