@@ -1,0 +1,5 @@
+cmake/*
+.vscode
+app/Server
+app/DB/DB
+test/testP1
