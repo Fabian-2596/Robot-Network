@@ -24,8 +24,8 @@
 	ProcessorClockFrequency="3600.01"
 	>
 	<Testing>
-		<StartDateTime>Nov 22 03:11 CET</StartDateTime>
-		<StartTestTime>1700619069</StartTestTime>
+		<StartDateTime>Nov 22 04:24 CET</StartDateTime>
+		<StartTestTime>1700623468</StartTestTime>
 		<TestList>
 			<Test>./healthCheck</Test>
 		</TestList>
@@ -42,7 +42,7 @@
 					<Value>255</Value>
 				</NamedMeasurement>
 				<NamedMeasurement type="numeric/double" name="Execution Time">
-					<Value>0.0019223</Value>
+					<Value>0.0013615</Value>
 				</NamedMeasurement>
 				<NamedMeasurement type="numeric/double" name="Processors">
 					<Value>1</Value>
@@ -57,12 +57,14 @@
 					<Value>#CTEST_RESOURCE_GROUP_COUNT=</Value>
 				</NamedMeasurement>
 				<Measurement>
-					<Value></Value>
+					<Value>
+GET Connection Failed 
+</Value>
 				</Measurement>
 			</Results>
 		</Test>
-		<EndDateTime>Nov 22 03:11 CET</EndDateTime>
-		<EndTestTime>1700619069</EndTestTime>
+		<EndDateTime>Nov 22 04:24 CET</EndDateTime>
+		<EndTestTime>1700623468</EndTestTime>
 		<ElapsedMinutes>0</ElapsedMinutes>
 	</Testing>
 </Site>
