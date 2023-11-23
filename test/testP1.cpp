@@ -8,6 +8,8 @@
 #include <sstream>
 #include <string>
 #include <iostream>
+#include <chrono>
+#include <thread>
 
 using namespace std;
 const int PORT{8080};
@@ -33,10 +35,18 @@ int main()
         return -1;
     }
 
-    if ((status = connect(client_fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr))) < 0)
+    int loop{5};
+    int i{0};
+    while ((status = connect(client_fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr))) < 0)
     {
-        printf("\nGET Connection Failed \n");
-        return -1;
+        cout << "\nGET Connection Failed Try " << i <<" of " << loop << endl;
+        if (i >= loop)
+        {
+            return -1;
+        }else{
+            this_thread::sleep_for(chrono::seconds(2));
+            ++i;
+        }
     }
 
     // Send GET to Server
@@ -84,7 +94,11 @@ int main()
         cout << "POST Send Failed" << endl;
         return -1;
     }
-    if ((read(client_fd, postbuffer, 1024 - 1)) == -1){cout << "POST Read Failed" << endl; return -1;}
+    if ((read(client_fd, postbuffer, 1024 - 1)) == -1)
+    {
+        cout << "POST Read Failed" << endl;
+        return -1;
+    }
 
     close(client_fd);
     if ((client_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
@@ -119,8 +133,14 @@ int main()
     {
         postgetResponse = postgetResponse + postgetTemp;
     }
-    if (errCode != "200"){return 1;}
-    if (postgetResponse != "testP1"){return 1;}
+    if (errCode != "200")
+    {
+        return 1;
+    }
+    if (postgetResponse != "testP1")
+    {
+        return 1;
+    }
 
     // closing the connected socket
     close(client_fd);

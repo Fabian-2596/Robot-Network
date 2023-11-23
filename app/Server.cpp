@@ -17,7 +17,7 @@ const int PORT = 8080;
 DB myDB{};
 
 void handle_request(int client_socket) {
-    //this_thread::sleep_for(chrono::seconds(time));
+    //this_thread::sleep_for(chrono::seconds(10));
     char buffer[1024] = {0};
     read(client_socket, buffer, sizeof(buffer));
     auto start_time = chrono::high_resolution_clock::now();
@@ -27,7 +27,7 @@ void handle_request(int client_socket) {
     request >> request_type >> path >> http_version;
 
     if (request_type != "GET" && request_type != "POST") {
-        string response = "HTTP/1.1 400 Bad Request\r\n\r\nError 400";
+        string response = "HTTP/1.1 400 Bad Request\r\n\r\nError 400\n";
         write(client_socket, response.c_str(), response.length());
         close(client_socket);
         return;
@@ -40,37 +40,37 @@ void handle_request(int client_socket) {
             switch (cnt_pl)
             {
             case 0:
-                response = "HTTP/1.1 200 OK\r\n\r\nSystem Status: Im Moment ist KEIN Roboter aktiv";
+                response = "HTTP/1.1 200 OK\r\n\r\nSystem Status: Im Moment ist KEIN Roboter aktiv\n";
                 break;
             case 1:
-                response = "HTTP/1.1 200 OK\r\n\r\nSystem Status: Im Moment ist nur 1 Roboter aktiv";
+                response = "HTTP/1.1 200 OK\r\n\r\nSystem Status: Im Moment ist nur 1 Roboter aktiv\n";
                 break;
             default:
-                response = "HTTP/1.1 200 OK\r\n\r\nSystem Status: Im Moment sind " + to_string(cnt_pl) + " Roboter aktiv";
+                response = "HTTP/1.1 200 OK\r\n\r\nSystem Status: Im Moment sind " + to_string(cnt_pl) + " Roboter aktiv\n";
                 break;
             }
 		}
 		else if(path == "/captain"){
-			response = "HTTP/1.1 200 OK\r\n\r\nDer aktuelle Kapitän ist " + myDB.getCaptain().player.name;
+			response = "HTTP/1.1 200 OK\r\n\r\nDer aktuelle Kapitän ist " + myDB.getCaptain().player.name + "\n";
 			}
 		else if(path == "/controller"){
-			response = "HTTP/1.1 200 OK\r\n\r\nController Status: Der Zustand des Controllers ist \"" + myDB.getConStatus() + "\"";
+			response = "HTTP/1.1 200 OK\r\n\r\nController Status: Der Zustand des Controllers ist \"" + myDB.getConStatus() + "\"\n";
 			}
 		else if(path == "/election"){
-			response = "HTTP/1.1 200 OK\r\n\r\nNeue Kapitänswahl wird angestoßen (Noch keine Funktion)";
+			response = "HTTP/1.1 200 OK\r\n\r\nNeue Kapitänswahl wird angestoßen (Noch keine Funktion)\n";
 		}
         else if(path == "/lastPOST"){
             response = "HTTP/1.1 200 OK\r\n\r\n";
             if(myDB.getPOSTData().empty()){
-                response = response + "noInputYet";
+                response = response + "noInputYet\n";
             }else
             {
-                response = response + myDB.getPOSTData().back();
+                response = response + myDB.getPOSTData().back() + "\n";
             }
             
         }
 		else{
-			response = "HTTP/1.1 404 Not Found\r\n\r\nHier gibt es nichts zu finden";
+			response = "HTTP/1.1 404 Not Found\r\n\r\nHier gibt es nichts zu finden\n";
 			}
         write(client_socket, response.c_str(), response.length());
         auto end_time = chrono::high_resolution_clock::now();
@@ -85,7 +85,7 @@ void handle_request(int client_socket) {
                     getline(request,data);
             }
         }
-        string response = "HTTP/1.1 200 OK\r\n\r\nDaten erhalten : " + data;
+        string response = "HTTP/1.1 200 OK\r\n\r\nDaten erhalten : " + data + "\n";
         myDB.addPOSTData(data);
         myDB.persistPOST();
         write(client_socket, response.c_str(), response.length());

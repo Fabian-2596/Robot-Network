@@ -78,6 +78,17 @@ test/fast: test
 
 .PHONY : test/fast
 
+# Special rule for the target package_source
+package_source:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Run CPack packaging tool for source..."
+	/usr/bin/cpack --config ./CPackSourceConfig.cmake /home/thomas/VS/cmake/build/CPackSourceConfig.cmake
+.PHONY : package_source
+
+# Special rule for the target package_source
+package_source/fast: package_source
+
+.PHONY : package_source/fast
+
 # Special rule for the target edit_cache
 edit_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "No interactive CMake dialog available..."
@@ -99,17 +110,6 @@ package: preinstall
 package/fast: package
 
 .PHONY : package/fast
-
-# Special rule for the target package_source
-package_source:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Run CPack packaging tool for source..."
-	/usr/bin/cpack --config ./CPackSourceConfig.cmake /home/thomas/VS/cmake/build/CPackSourceConfig.cmake
-.PHONY : package_source
-
-# Special rule for the target package_source
-package_source/fast: package_source
-
-.PHONY : package_source/fast
 
 # The main all target
 all: cmake_check_build_system
@@ -142,19 +142,6 @@ preinstall/fast:
 depend:
 	$(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
-
-#=============================================================================
-# Target rules for targets named testP1
-
-# Build rule for target.
-testP1: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 testP1
-.PHONY : testP1
-
-# fast build rule for target.
-testP1/fast:
-	$(MAKE) -f CMakeFiles/testP1.dir/build.make CMakeFiles/testP1.dir/build
-.PHONY : testP1/fast
 
 #=============================================================================
 # Target rules for targets named NightlyMemCheck
@@ -220,6 +207,19 @@ NightlyConfigure: cmake_check_build_system
 NightlyConfigure/fast:
 	$(MAKE) -f CMakeFiles/NightlyConfigure.dir/build.make CMakeFiles/NightlyConfigure.dir/build
 .PHONY : NightlyConfigure/fast
+
+#=============================================================================
+# Target rules for targets named testP1
+
+# Build rule for target.
+testP1: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 testP1
+.PHONY : testP1
+
+# fast build rule for target.
+testP1/fast:
+	$(MAKE) -f CMakeFiles/testP1.dir/build.make CMakeFiles/testP1.dir/build
+.PHONY : testP1/fast
 
 #=============================================================================
 # Target rules for targets named NightlyMemoryCheck
@@ -520,46 +520,6 @@ ContinuousSubmit/fast:
 	$(MAKE) -f CMakeFiles/ContinuousSubmit.dir/build.make CMakeFiles/ContinuousSubmit.dir/build
 .PHONY : ContinuousSubmit/fast
 
-#=============================================================================
-# Target rules for targets named VS-Praktikum
-
-# Build rule for target.
-VS-Praktikum: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 VS-Praktikum
-.PHONY : VS-Praktikum
-
-# fast build rule for target.
-VS-Praktikum/fast:
-	$(MAKE) -f CMakeFiles/VS-Praktikum.dir/build.make CMakeFiles/VS-Praktikum.dir/build
-.PHONY : VS-Praktikum/fast
-
-app/Server.o: app/Server.cpp.o
-
-.PHONY : app/Server.o
-
-# target to build an object file
-app/Server.cpp.o:
-	$(MAKE) -f CMakeFiles/VS-Praktikum.dir/build.make CMakeFiles/VS-Praktikum.dir/app/Server.cpp.o
-.PHONY : app/Server.cpp.o
-
-app/Server.i: app/Server.cpp.i
-
-.PHONY : app/Server.i
-
-# target to preprocess a source file
-app/Server.cpp.i:
-	$(MAKE) -f CMakeFiles/VS-Praktikum.dir/build.make CMakeFiles/VS-Praktikum.dir/app/Server.cpp.i
-.PHONY : app/Server.cpp.i
-
-app/Server.s: app/Server.cpp.s
-
-.PHONY : app/Server.s
-
-# target to generate assembly for a file
-app/Server.cpp.s:
-	$(MAKE) -f CMakeFiles/VS-Praktikum.dir/build.make CMakeFiles/VS-Praktikum.dir/app/Server.cpp.s
-.PHONY : app/Server.cpp.s
-
 test/testP1.o: test/testP1.cpp.o
 
 .PHONY : test/testP1.o
@@ -595,13 +555,14 @@ help:
 	@echo "... depend"
 	@echo "... rebuild_cache"
 	@echo "... test"
-	@echo "... testP1"
+	@echo "... package_source"
 	@echo "... edit_cache"
 	@echo "... NightlyMemCheck"
 	@echo "... NightlyTest"
 	@echo "... ContinuousConfigure"
 	@echo "... ContinuousBuild"
 	@echo "... NightlyConfigure"
+	@echo "... testP1"
 	@echo "... NightlyMemoryCheck"
 	@echo "... ExperimentalTest"
 	@echo "... ContinuousUpdate"
@@ -626,11 +587,6 @@ help:
 	@echo "... ContinuousMemCheck"
 	@echo "... ContinuousTest"
 	@echo "... ContinuousSubmit"
-	@echo "... package_source"
-	@echo "... VS-Praktikum"
-	@echo "... app/Server.o"
-	@echo "... app/Server.i"
-	@echo "... app/Server.s"
 	@echo "... test/testP1.o"
 	@echo "... test/testP1.i"
 	@echo "... test/testP1.s"

@@ -54,17 +54,16 @@ CMAKE_BINARY_DIR = /home/thomas/VS/cmake/build
 
 # The main recursive "all" target.
 all: CMakeFiles/testP1.dir/all
-all: CMakeFiles/VS-Praktikum.dir/all
 
 .PHONY : all
 
 # The main recursive "clean" target.
-clean: CMakeFiles/testP1.dir/clean
 clean: CMakeFiles/NightlyMemCheck.dir/clean
 clean: CMakeFiles/NightlyTest.dir/clean
 clean: CMakeFiles/ContinuousConfigure.dir/clean
 clean: CMakeFiles/ContinuousBuild.dir/clean
 clean: CMakeFiles/NightlyConfigure.dir/clean
+clean: CMakeFiles/testP1.dir/clean
 clean: CMakeFiles/NightlyMemoryCheck.dir/clean
 clean: CMakeFiles/ExperimentalTest.dir/clean
 clean: CMakeFiles/ContinuousUpdate.dir/clean
@@ -88,7 +87,6 @@ clean: CMakeFiles/ContinuousStart.dir/clean
 clean: CMakeFiles/ContinuousMemCheck.dir/clean
 clean: CMakeFiles/ContinuousTest.dir/clean
 clean: CMakeFiles/ContinuousSubmit.dir/clean
-clean: CMakeFiles/VS-Praktikum.dir/clean
 
 .PHONY : clean
 
@@ -96,33 +94,6 @@ clean: CMakeFiles/VS-Praktikum.dir/clean
 preinstall:
 
 .PHONY : preinstall
-
-#=============================================================================
-# Target rules for target CMakeFiles/testP1.dir
-
-# All Build rule for target.
-CMakeFiles/testP1.dir/all:
-	$(MAKE) -f CMakeFiles/testP1.dir/build.make CMakeFiles/testP1.dir/depend
-	$(MAKE) -f CMakeFiles/testP1.dir/build.make CMakeFiles/testP1.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/thomas/VS/cmake/build/CMakeFiles --progress-num=3,4 "Built target testP1"
-.PHONY : CMakeFiles/testP1.dir/all
-
-# Build rule for subdir invocation for target.
-CMakeFiles/testP1.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/thomas/VS/cmake/build/CMakeFiles 2
-	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/testP1.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/thomas/VS/cmake/build/CMakeFiles 0
-.PHONY : CMakeFiles/testP1.dir/rule
-
-# Convenience name for target.
-testP1: CMakeFiles/testP1.dir/rule
-
-.PHONY : testP1
-
-# clean rule for target.
-CMakeFiles/testP1.dir/clean:
-	$(MAKE) -f CMakeFiles/testP1.dir/build.make CMakeFiles/testP1.dir/clean
-.PHONY : CMakeFiles/testP1.dir/clean
 
 #=============================================================================
 # Target rules for target CMakeFiles/NightlyMemCheck.dir
@@ -258,6 +229,33 @@ NightlyConfigure: CMakeFiles/NightlyConfigure.dir/rule
 CMakeFiles/NightlyConfigure.dir/clean:
 	$(MAKE) -f CMakeFiles/NightlyConfigure.dir/build.make CMakeFiles/NightlyConfigure.dir/clean
 .PHONY : CMakeFiles/NightlyConfigure.dir/clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/testP1.dir
+
+# All Build rule for target.
+CMakeFiles/testP1.dir/all:
+	$(MAKE) -f CMakeFiles/testP1.dir/build.make CMakeFiles/testP1.dir/depend
+	$(MAKE) -f CMakeFiles/testP1.dir/build.make CMakeFiles/testP1.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/thomas/VS/cmake/build/CMakeFiles --progress-num=1,2 "Built target testP1"
+.PHONY : CMakeFiles/testP1.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/testP1.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/thomas/VS/cmake/build/CMakeFiles 2
+	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/testP1.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/thomas/VS/cmake/build/CMakeFiles 0
+.PHONY : CMakeFiles/testP1.dir/rule
+
+# Convenience name for target.
+testP1: CMakeFiles/testP1.dir/rule
+
+.PHONY : testP1
+
+# clean rule for target.
+CMakeFiles/testP1.dir/clean:
+	$(MAKE) -f CMakeFiles/testP1.dir/build.make CMakeFiles/testP1.dir/clean
+.PHONY : CMakeFiles/testP1.dir/clean
 
 #=============================================================================
 # Target rules for target CMakeFiles/NightlyMemoryCheck.dir
@@ -879,33 +877,6 @@ ContinuousSubmit: CMakeFiles/ContinuousSubmit.dir/rule
 CMakeFiles/ContinuousSubmit.dir/clean:
 	$(MAKE) -f CMakeFiles/ContinuousSubmit.dir/build.make CMakeFiles/ContinuousSubmit.dir/clean
 .PHONY : CMakeFiles/ContinuousSubmit.dir/clean
-
-#=============================================================================
-# Target rules for target CMakeFiles/VS-Praktikum.dir
-
-# All Build rule for target.
-CMakeFiles/VS-Praktikum.dir/all:
-	$(MAKE) -f CMakeFiles/VS-Praktikum.dir/build.make CMakeFiles/VS-Praktikum.dir/depend
-	$(MAKE) -f CMakeFiles/VS-Praktikum.dir/build.make CMakeFiles/VS-Praktikum.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/thomas/VS/cmake/build/CMakeFiles --progress-num=1,2 "Built target VS-Praktikum"
-.PHONY : CMakeFiles/VS-Praktikum.dir/all
-
-# Build rule for subdir invocation for target.
-CMakeFiles/VS-Praktikum.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/thomas/VS/cmake/build/CMakeFiles 2
-	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/VS-Praktikum.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/thomas/VS/cmake/build/CMakeFiles 0
-.PHONY : CMakeFiles/VS-Praktikum.dir/rule
-
-# Convenience name for target.
-VS-Praktikum: CMakeFiles/VS-Praktikum.dir/rule
-
-.PHONY : VS-Praktikum
-
-# clean rule for target.
-CMakeFiles/VS-Praktikum.dir/clean:
-	$(MAKE) -f CMakeFiles/VS-Praktikum.dir/build.make CMakeFiles/VS-Praktikum.dir/clean
-.PHONY : CMakeFiles/VS-Praktikum.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.
