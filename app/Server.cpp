@@ -8,13 +8,43 @@
 #include <vector>
 #include <chrono>
 #include <thread>
-
+#include <thrift/protocol/TBinaryProtocol.h>
+#include <thrift/server/TSimpleServer.h>
+#include <thrift/transport/TServerSocket.h>
+#include <thrift/transport/TBufferTransports.h>
 #include "DB/DB.cpp"
+#include "gen-cpp/RobotController.h"
 
 using namespace std;
+using namespace ::apache::thrift;
+using namespace ::apache::thrift::protocol;
+using namespace ::apache::thrift::transport;
+using namespace ::apache::thrift::server;
 
 const int PORT = 8080;
+int currentId = 0;
+vector<Player> team;
 DB myDB{};
+
+class RobotControllerHandler : virtual public RobotControllerIf {
+ public:
+  RobotControllerHandler() {
+    // Your initialization goes here
+  }
+
+  void registerRobot(const string& name) {
+    // Your implementation goes here
+    printf("registerRobot\n");
+  }
+
+  bool checkRobotHealth(const int32_t id) {
+    // Your implementation goes here
+    printf("checkRobotHealth\n");
+    return true;
+  }
+
+};
+
 
 void handle_request(int client_socket) {
     //this_thread::sleep_for(chrono::seconds(10));
@@ -87,7 +117,7 @@ void handle_request(int client_socket) {
         }
         string response = "HTTP/1.1 200 OK\r\n\r\nDaten erhalten : " + data + "\n";
         myDB.addPOSTData(data);
-        myDB.persistPOST();
+        //myDB.persistPOST();
         write(client_socket, response.c_str(), response.length());
         auto end_time = chrono::high_resolution_clock::now();
         chrono::duration<double> rtt = end_time - start_time;
@@ -108,6 +138,16 @@ int main() {
     server_address.sin_port = htons(PORT);
     bind(server_socket, (struct sockaddr*)&server_address, sizeof(server_address));
     listen(server_socket, 5);
+
+    int port = 9090;
+    ::std::shared_ptr<RobotControllerHandler> handler(new RobotControllerHandler());
+    ::std::shared_ptr<TProcessor> processor(new RobotControllerProcessor(handler));
+    ::std::shared_ptr<TServerTransport> serverTransport(new TServerSocket(port));
+    ::std::shared_ptr<TTransportFactory> transportFactory(new TBufferedTransportFactory());
+    ::std::shared_ptr<TProtocolFactory> protocolFactory(new TBinaryProtocolFactory());
+
+    TSimpleServer server(processor, serverTransport, transportFactory, protocolFactory);
+    server.serve();
 
     while (true) {
         socklen_t client_address_len = sizeof(client_address);

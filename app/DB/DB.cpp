@@ -9,7 +9,9 @@ const string $POSTDATAPATH = "DB/POSTData.txt";
 
 //TODO: Struktur anpassen/verbessern
 struct Player{
+  int id;
   string name;
+  bool isActive;
 };
 struct Captain
 {
@@ -50,7 +52,7 @@ public:
 
   void addPOSTData(string postData) { this->POSTData.push_back(postData); }
 
-  void persistPOST();
+  //void persistPOST();
   vector<string> readPOSTtxt();
 };
 
@@ -59,7 +61,6 @@ DB::DB(){
   pl.name = "Tony Kroos";
 
   Captain cp{};
-  cp.player = pl;
   this->captain = cp;
 
   Team mann{};
@@ -74,10 +75,10 @@ DB::DB(){
 
 DB::~DB(){
 
-  persistPOST();
+  //persistPOST();
 
 }
-
+/*
 void DB::persistPOST()
 {
   while (txt_editable = false){}
@@ -95,7 +96,7 @@ void DB::persistPOST()
   txt_editable = true;
 
   cout << "POST-Daten wurden gesichert" << endl;
-}
+}*/
 
 
 vector<string> DB::readPOSTtxt(){
