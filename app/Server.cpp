@@ -10,6 +10,7 @@
 #include <thread>
 #include <thrift/protocol/TBinaryProtocol.h>
 #include <thrift/server/TSimpleServer.h>
+#include <thrift/server/TThreadedServer.h>
 #include <thrift/transport/TServerSocket.h>
 #include <thrift/transport/TBufferTransports.h>
 #include "DB/DB.cpp"
@@ -32,19 +33,32 @@ class RobotControllerHandler : virtual public RobotControllerIf {
     // Your initialization goes here
   }
 
-  void registerRobot(const string& name) {
+  void ping() {
     // Your implementation goes here
+    printf("ping\n");
+  }
+
+  void registerRobot(const int32_t id, const std::string& name) {
+    Player p;
+    p.id = id;
+    p.name = name;
+    p.isActive = true;
+    team.push_back(p);
     printf("registerRobot\n");
   }
 
   bool checkRobotHealth(const int32_t id) {
     // Your implementation goes here
-    printf("checkRobotHealth\n");
     return true;
+    printf("checkRobotHealth\n");
+  }
+
+  void electionResult(const int32_t id) {
+    // Your implementation goes here
+    printf("electionResult\n");
   }
 
 };
-
 
 void handle_request(int client_socket) {
     //this_thread::sleep_for(chrono::seconds(10));
@@ -57,14 +71,14 @@ void handle_request(int client_socket) {
     request >> request_type >> path >> http_version;
 
     if (request_type != "GET" && request_type != "POST") {
-        string response = "HTTP/1.1 400 Bad Request\r\n\r\nError 400\n";
+        std::string response = "HTTP/1.1 400 Bad Request\r\n\r\nError 400\n";
         write(client_socket, response.c_str(), response.length());
         close(client_socket);
         return;
     }
 
     if (request_type == "GET") {
-		string response;
+		std::string response;
         if(path == "/status"){
             int cnt_pl = myDB.getCountSpieler();
             switch (cnt_pl)
@@ -109,13 +123,13 @@ void handle_request(int client_socket) {
     }
   
     if (request_type == "POST") {
-        string data;
+        std::string data;
         while (getline(request, data)) {
             if (data.substr(0, 14) == "Content-Length") {
                     getline(request,data);
             }
         }
-        string response = "HTTP/1.1 200 OK\r\n\r\nDaten erhalten : " + data + "\n";
+        std::string response = "HTTP/1.1 200 OK\r\n\r\nDaten erhalten : " + data + "\n";
         myDB.addPOSTData(data);
         //myDB.persistPOST();
         write(client_socket, response.c_str(), response.length());
@@ -146,8 +160,9 @@ int main() {
     ::std::shared_ptr<TTransportFactory> transportFactory(new TBufferedTransportFactory());
     ::std::shared_ptr<TProtocolFactory> protocolFactory(new TBinaryProtocolFactory());
 
-    TSimpleServer server(processor, serverTransport, transportFactory, protocolFactory);
+    TThreadedServer server(processor, serverTransport, transportFactory, protocolFactory);
     server.serve();
+
 
     while (true) {
         socklen_t client_address_len = sizeof(client_address);
