@@ -15,14 +15,15 @@ int main() {
     std::string name = "TestRoboter";
     int id = 0;
 
-    std::shared_ptr<TTransport> socket(new TSocket(controllerAddress, controllerPort));
-    std::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
-    std::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+    ::std::shared_ptr<TTransport> socket(new TSocket(controllerAddress, controllerPort));
+    ::std::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
+    ::std::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
 
     RobotControllerClient client(protocol);
 
     try {
         transport->open();
+        client.ping();
         client.registerRobot(id, name);
         transport->close();
     } catch (const TException& e) {

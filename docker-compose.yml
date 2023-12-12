@@ -1,0 +1,21 @@
+version: '3'
+services:
+  robot-controller:
+    build:
+      context: ./app
+    ports:
+      - "8080:8080"
+      - "9090:9090"  
+    networks:
+      - robot-network
+
+  robot1:
+    build:
+      context: ./robot
+    depends_on:
+      - robot-controller
+    networks:
+      - robot-network
+
+networks:
+  robot-network:

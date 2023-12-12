@@ -111,7 +111,6 @@ void handle_request(int client_socket) {
             {
                 response = response + myDB.getPOSTData().back() + "\n";
             }
-            
         }
 		else{
 			response = "HTTP/1.1 404 Not Found\r\n\r\nHier gibt es nichts zu finden\n";
@@ -153,6 +152,7 @@ int main() {
     bind(server_socket, (struct sockaddr*)&server_address, sizeof(server_address));
     listen(server_socket, 5);
 
+
     int port = 9090;
     ::std::shared_ptr<RobotControllerHandler> handler(new RobotControllerHandler());
     ::std::shared_ptr<TProcessor> processor(new RobotControllerProcessor(handler));
@@ -162,7 +162,6 @@ int main() {
 
     TThreadedServer server(processor, serverTransport, transportFactory, protocolFactory);
     server.serve();
-
 
     while (true) {
         socklen_t client_address_len = sizeof(client_address);
