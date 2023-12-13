@@ -8,57 +8,21 @@
 #include <vector>
 #include <chrono>
 #include <thread>
-#include <thrift/protocol/TBinaryProtocol.h>
-#include <thrift/server/TSimpleServer.h>
-#include <thrift/server/TThreadedServer.h>
-#include <thrift/transport/TServerSocket.h>
-#include <thrift/transport/TBufferTransports.h>
+#include <grpcpp/grpcpp.h>
+#include "server.grpc.pb.h"
 #include "DB/DB.cpp"
-#include "gen-cpp/RobotController.h"
 
 using namespace std;
-using namespace ::apache::thrift;
-using namespace ::apache::thrift::protocol;
-using namespace ::apache::thrift::transport;
-using namespace ::apache::thrift::server;
+using grpc::Server;
+using grpc::ServerBuilder;
+using grpc::ServerContext;
+using grpc::Status;
 
 const int PORT = 8080;
 int currentId = 0;
 vector<Player> team;
 DB myDB{};
 
-class RobotControllerHandler : virtual public RobotControllerIf {
- public:
-  RobotControllerHandler() {
-    // Your initialization goes here
-  }
-
-  void ping() {
-    // Your implementation goes here
-    printf("ping\n");
-  }
-
-  void registerRobot(const int32_t id, const std::string& name) {
-    Player p;
-    p.id = id;
-    p.name = name;
-    p.isActive = true;
-    team.push_back(p);
-    printf("registerRobot\n");
-  }
-
-  bool checkRobotHealth(const int32_t id) {
-    // Your implementation goes here
-    return true;
-    printf("checkRobotHealth\n");
-  }
-
-  void electionResult(const int32_t id) {
-    // Your implementation goes here
-    printf("electionResult\n");
-  }
-
-};
 
 void handle_request(int client_socket) {
     //this_thread::sleep_for(chrono::seconds(10));
@@ -87,7 +51,7 @@ void handle_request(int client_socket) {
                 response = "HTTP/1.1 200 OK\r\n\r\nSystem Status: Im Moment ist KEIN Roboter aktiv\n";
                 break;
             case 1:
-                response = "HTTP/1.1 200 OK\r\n\r\nSystem Status: Im Moment ist nur 1 Roboter aktiv\n";
+                response = "HTTP/1.1 200 OK\r\n\r\nSystem Status: Im Moment ist nur 12 Roboter aktiv\n";
                 break;
             default:
                 response = "HTTP/1.1 200 OK\r\n\r\nSystem Status: Im Moment sind " + to_string(cnt_pl) + " Roboter aktiv\n";
@@ -141,10 +105,27 @@ void handle_request(int client_socket) {
 
 }
 
-int main() {
+class RobotControlServiceImpl final : public RobotControl::Service {
+public:
+    grpc::Status RegisterRobot(grpc::ServerContext* context, const RobotRegistration* request, RobotStatus* response) override {
+        // Implementieren Sie hier die Anmeldelogik für den Roboter
+        // Setzen Sie response entsprechend, um den Status des Roboters zu aktualisieren
+        response->set_is_active(true);
+        return grpc::Status::OK;
+    }
+
+    grpc::Status GetRobotStatus(grpc::ServerContext* context, const RobotRegistration* request, RobotStatus* response) override {
+        // Implementieren Sie hier die Logik, um den Status des Roboters abzurufen
+        // Setzen Sie response entsprechend, um den aktuellen Status zurückzugeben
+        response->set_is_active(true);
+        return grpc::Status::OK;
+    }
+    // Fügen Sie hier weitere RPC-Methoden hinzu, falls benötigt
+};
+
+void httpServer() {
     int server_socket, client_socket;
     struct sockaddr_in server_address, client_address;
-
     server_socket = socket(AF_INET, SOCK_STREAM, 0);
     server_address.sin_family = AF_INET;
     server_address.sin_addr.s_addr = INADDR_ANY;
@@ -152,38 +133,42 @@ int main() {
     bind(server_socket, (struct sockaddr*)&server_address, sizeof(server_address));
     listen(server_socket, 5);
 
-
-    int port = 9090;
-    ::std::shared_ptr<RobotControllerHandler> handler(new RobotControllerHandler());
-    ::std::shared_ptr<TProcessor> processor(new RobotControllerProcessor(handler));
-    ::std::shared_ptr<TServerTransport> serverTransport(new TServerSocket(port));
-    ::std::shared_ptr<TTransportFactory> transportFactory(new TBufferedTransportFactory());
-    ::std::shared_ptr<TProtocolFactory> protocolFactory(new TBinaryProtocolFactory());
-
-    TThreadedServer server(processor, serverTransport, transportFactory, protocolFactory);
-    server.serve();
-
     while (true) {
         socklen_t client_address_len = sizeof(client_address);
-
-        cout << "Controller waiting for connections" << endl;
+        cout << "HTTP Server waiting for connections" << endl;
         myDB.setConStatus("waiting");
         client_socket = accept(server_socket, (struct sockaddr*)&client_address, &client_address_len);
-
         if (client_socket < 0) {
-            cerr << "Error in connection acceptance." << endl;
-            return -1;
+            cerr << "Error in HTTP connection acceptance." << endl;
+            return;
         }
-        myDB.setConStatus("processind");
-
-        thread new_thread(handle_request, client_socket);
-        cout << "Thread " << new_thread.get_id() << " erstellt" << endl; 
-        new_thread.detach();
-        
+        myDB.setConStatus("processing");
+        //thread new_thread(handle_request, client_socket);
+        //cout << "HTTP Thread " << new_thread.get_id() << " created" << endl;
         myDB.setConStatus("task finished");
     }
+
     close(server_socket);
     myDB.setConStatus("exited");
+}
+
+void grpcServer() {
+    RobotControlServiceImpl service;
+    ServerBuilder builder;
+    builder.AddListeningPort("0.0.0.0:50051", grpc::InsecureServerCredentials());
+    builder.RegisterService(&service);
+
+    std::unique_ptr<Server> grpc_server(builder.BuildAndStart());
+    cout << "gRPC server listening on port 50051" << endl;
+    grpc_server->Wait();
+}
+
+int main() {
+    //thread http_thread(httpServer);
+    thread grpc_thread(grpcServer);
+
+    //http_thread.join();
+    grpc_thread.join();
 
     return 0;
 }

@@ -1,15 +1,12 @@
 FROM ubuntu:latest
 
+RUN apt-get update && \
+    apt-get install -y build-essential cmake
+
+RUN apt-get install -y libgrpc++-dev protobuf-compiler-grpc
 WORKDIR /
 COPY . . 
-RUN apt-get update && \
-    apt-get install -y \
-    build-essential \
-    libboost-system-dev \
-    libboost-thread-dev \
-    libevent-dev \
-    libthrift-dev
+RUN protoc -I=. --cpp_out=. --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` server.proto
+RUN g++ -std=c++11 -o robot robot.cpp server.grpc.pb.cc server.pb.cc -lgrpc++ -lprotobuf -pthread
+CMD ["./robot"]
 
-RUN gcc -o robot1 robot.cpp -lthriftnb -levent -std=c++11 -pthread 
-CMD ["./robot.cpp"]
-EXPOSE 9090

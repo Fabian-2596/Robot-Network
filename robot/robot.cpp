@@ -1,34 +1,57 @@
 #include <iostream>
-#include <thrift/transport/TSocket.h>
-#include <thrift/transport/TBufferTransports.h>
-#include <thrift/protocol/TBinaryProtocol.h>
-#include "gen-cpp/register_types.h"
-#include "gen-cpp/RobotController.h"
+#include <memory>
+#include <grpcpp/grpcpp.h>
+#include "server.grpc.pb.h"
 
-using namespace apache::thrift;
-using namespace apache::thrift::protocol;
-using namespace apache::thrift::transport;
+using grpc::Channel;
+using grpc::ClientContext;
+using grpc::Status;
+
+class RobotClient {
+public:
+    RobotClient(std::shared_ptr<Channel> channel) : stub_(RobotControl::NewStub(channel)) {}
+
+    RobotStatus RegisterRobot(const RobotRegistration& registration) {
+        RobotStatus response;
+        grpc::ClientContext context;
+        grpc::Status status = stub_->RegisterRobot(&context, registration, &response);
+
+        if (status.ok()) {
+            std::cout << "Robot registration successful. Status: " << response.is_active() << std::endl;
+        } else {
+            std::cerr << "Error in robot registration: " << status.error_message() << std::endl;
+        }
+
+        return response;
+    }
+
+    RobotStatus GetRobotStatus(const RobotRegistration& registration) {
+        RobotStatus response;
+        grpc::ClientContext context;
+        grpc::Status status = stub_->GetRobotStatus(&context, registration, &response);
+
+        if (status.ok()) {
+            std::cout << "Robot status received. Status: " << response.is_active() << std::endl;
+        } else {
+            std::cerr << "Error getting robot status: " << status.error_message() << std::endl;
+        }
+
+        return response;
+    }
+
+private:
+    std::unique_ptr<RobotControl::Stub> stub_;
+};
 
 int main() {
-    std::string controllerAddress = "localhost";
-    int controllerPort = 9090;
-    std::string name = "TestRoboter";
-    int id = 0;
+    std::shared_ptr<grpc::Channel> channel = grpc::CreateChannel("robot-controller:50051", grpc::InsecureChannelCredentials());
+    RobotClient robotClient(channel);
 
-    ::std::shared_ptr<TTransport> socket(new TSocket(controllerAddress, controllerPort));
-    ::std::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
-    ::std::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+    RobotRegistration registration;
+    registration.set_robot_id("robot123");
+    RobotStatus status = robotClient.RegisterRobot(registration);
 
-    RobotControllerClient client(protocol);
-
-    try {
-        transport->open();
-        client.ping();
-        client.registerRobot(id, name);
-        transport->close();
-    } catch (const TException& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-    }
+    status = robotClient.GetRobotStatus(registration);
 
     return 0;
 }
