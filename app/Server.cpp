@@ -19,7 +19,7 @@ using grpc::ServerContext;
 using grpc::Status;
 
 const int PORT = 8080;
-int currentId = 0;
+int robotid = 0;
 vector<Player> team;
 DB myDB{};
 
@@ -44,14 +44,15 @@ void handle_request(int client_socket) {
     if (request_type == "GET") {
 		std::string response;
         if(path == "/status"){
-            int cnt_pl = myDB.getCountSpieler();
+            //int cnt_pl = myDB.getCountSpieler();
+            int cnt_pl = team.size();
             switch (cnt_pl)
             {
             case 0:
                 response = "HTTP/1.1 200 OK\r\n\r\nSystem Status: Im Moment ist KEIN Roboter aktiv\n";
                 break;
             case 1:
-                response = "HTTP/1.1 200 OK\r\n\r\nSystem Status: Im Moment ist nur 12 Roboter aktiv\n";
+                response = "HTTP/1.1 200 OK\r\n\r\nSystem Status: Im Moment ist nur 1 Roboter aktiv\n";
                 break;
             default:
                 response = "HTTP/1.1 200 OK\r\n\r\nSystem Status: Im Moment sind " + to_string(cnt_pl) + " Roboter aktiv\n";
@@ -111,6 +112,11 @@ public:
         // Implementieren Sie hier die Anmeldelogik für den Roboter
         // Setzen Sie response entsprechend, um den Status des Roboters zu aktualisieren
         response->set_is_active(true);
+        Player p;
+        p.id = request->robot_id();
+        p.name = request->robot_name();
+        p.isActive = response->is_active();
+        team.push_back(p);
         return grpc::Status::OK;
     }
 
@@ -120,7 +126,7 @@ public:
         response->set_is_active(true);
         return grpc::Status::OK;
     }
-    // Fügen Sie hier weitere RPC-Methoden hinzu, falls benötigt
+
 };
 
 void httpServer() {
@@ -143,8 +149,8 @@ void httpServer() {
             return;
         }
         myDB.setConStatus("processing");
-        //thread new_thread(handle_request, client_socket);
-        //cout << "HTTP Thread " << new_thread.get_id() << " created" << endl;
+        thread new_thread(handle_request, client_socket);
+        cout << "HTTP Thread " << new_thread.get_id() << " created" << endl;
         myDB.setConStatus("task finished");
     }
 
@@ -164,11 +170,33 @@ void grpcServer() {
 }
 
 int main() {
-    //thread http_thread(httpServer);
+    int server_socket, client_socket;
+    struct sockaddr_in server_address, client_address;
+    server_socket = socket(AF_INET, SOCK_STREAM, 0);
+    server_address.sin_family = AF_INET;
+    server_address.sin_addr.s_addr = INADDR_ANY;
+    server_address.sin_port = htons(PORT);
+    bind(server_socket, (struct sockaddr*)&server_address, sizeof(server_address));
+    listen(server_socket, 5);
     thread grpc_thread(grpcServer);
-
-    //http_thread.join();
-    grpc_thread.join();
-
+    while (true) {
+        socklen_t client_address_len = sizeof(client_address);
+        cout << "HTTP Server waiting for connections" << endl;
+        myDB.setConStatus("waiting");
+        client_socket = accept(server_socket, (struct sockaddr*)&client_address, &client_address_len);
+        if (client_socket < 0) {
+            cerr << "Error in HTTP connection acceptance." << endl;
+            return -1;
+        }
+        myDB.setConStatus("processing");
+        thread new_thread(handle_request, client_socket);
+        new_thread.detach();
+        cout << "HTTP Thread " << new_thread.get_id() << " created" << endl;
+        myDB.setConStatus("task finished");
+    }
+    
+    close(server_socket);
+    myDB.setConStatus("exited");
+    
     return 0;
 }

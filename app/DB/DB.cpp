@@ -9,7 +9,7 @@ const string $POSTDATAPATH = "DB/POSTData.txt";
 
 //TODO: Struktur anpassen/verbessern
 struct Player{
-  int id;
+  string id;
   string name;
   bool isActive;
 };
