@@ -2,7 +2,7 @@
 #include <memory>
 #include <string>
 #include <grpcpp/grpcpp.h>
-#include "server.grpc.pb.h"
+#include "robot.grpc.pb.h"
 
 using grpc::Channel;
 using grpc::ClientContext;

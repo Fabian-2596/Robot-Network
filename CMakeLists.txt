@@ -23,13 +23,7 @@ execute_process(
     COMMAND docker rm VS-Container
 )
 message(">>> build docker image")
-execute_process(
-    COMMAND docker build -t vs-server ${CMAKE_CURRENT_LIST_DIR}
-)
-message(">>> docker image build")
-execute_process(
-    COMMAND docker run --name VS-Container -d -p 8080:8080 vs-server
-)
+
 message(">>> docker server is running")
 
 add_executable(testP1 test/testP1.cpp)

@@ -6,8 +6,3 @@ Status is seen over localhost:8080/status
 Captain is seen over localhost:8080/captain
 Controller health is seen over localhost:8080/controller
 To start election for a new captain localhost:8080/election
-
-
-Tests:
-Getestet wird mit dem Konsolen-Programm "ApacheBench"
-ab -n 10000 -c 100 "https://localhost:8080/"

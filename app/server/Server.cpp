@@ -10,7 +10,7 @@
 #include <thread>
 #include <grpcpp/grpcpp.h>
 #include "server.grpc.pb.h"
-#include "DB/DB.cpp"
+#include "../DB/DB.cpp"
 
 using namespace std;
 using grpc::Server;
@@ -190,8 +190,8 @@ int main() {
         }
         myDB.setConStatus("processing");
         thread new_thread(handle_request, client_socket);
-        new_thread.detach();
         cout << "HTTP Thread " << new_thread.get_id() << " created" << endl;
+        new_thread.detach();
         myDB.setConStatus("task finished");
     }
     
