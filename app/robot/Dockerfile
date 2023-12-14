@@ -6,7 +6,7 @@ RUN apt-get update && \
 RUN apt-get install -y libgrpc++-dev protobuf-compiler-grpc
 WORKDIR /
 COPY . . 
-RUN protoc -I=. --cpp_out=. --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` server.proto
-RUN g++ -std=c++11 -o robot robot.cpp server.grpc.pb.cc server.pb.cc -lgrpc++ -lprotobuf -pthread
+RUN protoc -I=. --cpp_out=. --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` robot.proto
+RUN g++ -std=c++11 -o robot robot.cpp robot.grpc.pb.cc robot.pb.cc -lgrpc++ -lprotobuf -pthread
 CMD ["./robot"]
 

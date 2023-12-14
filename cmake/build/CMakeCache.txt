@@ -291,9 +291,6 @@ CVS_UPDATE_OPTIONS:STRING=-d -A -P
 DART_TESTING_TIMEOUT:STRING=1500
 
 //Path to a program.
-Docker_EXECUTABLE:FILEPATH=/usr/bin/docker
-
-//Path to a program.
 GITCOMMAND:FILEPATH=/usr/bin/git
 
 //Path to a program.

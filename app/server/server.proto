@@ -7,14 +7,19 @@ message RobotStatus {
 }
 
 message RobotRegistration {
-  string robot_id = 1;
+  int32 robot_id = 1;
   string robot_name = 2;  
+}
+
+message RobotSetStatus{
+  int32 robot_id = 1;
+  bool is_active = 2;
 }
 
 // Definition des Dienstes
 service RobotControl {
   rpc RegisterRobot(RobotRegistration) returns (RobotStatus);
   rpc GetRobotStatus(RobotRegistration) returns (RobotStatus);
-  
+  rpc SetRobotStatus(RobotSetStatus) returns (RobotStatus);
 }
 

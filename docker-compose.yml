@@ -2,7 +2,7 @@ version: '3'
 services:
   robot-controller:
     build:
-      context: ./app
+      context: ./app/server
     ports:
       - "8080:8080"
       - "50051:50051"
@@ -11,7 +11,7 @@ services:
 
   robot1:
     build:
-      context: ./robot
+      context: ./app/robot
     depends_on:
       - robot-controller
     networks:
@@ -19,7 +19,7 @@ services:
       
   robot2:
     build:
-      context: ./robot
+      context: ./app/robot
     depends_on:
       - robot-controller
     networks:
