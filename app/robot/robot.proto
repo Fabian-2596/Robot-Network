@@ -21,6 +21,13 @@ message RobotChangeStatus{
   int32 robot_id = 1;
   bool is_active = 2;
 }
+message HeartbeatRequest {
+  int32 robot_id = 1;
+}
+
+message HeartbeatResponse {
+  bool success = 1;
+}
 
 // Definition des Dienstes
 service RobotControl {
@@ -28,5 +35,6 @@ service RobotControl {
   rpc GetRobotStatus(RobotRegistration) returns (RobotStatus);
   rpc ChangeRobotId(RobotIdRequest) returns (RobotIdResponse);
   rpc SetRobotStatus(RobotChangeStatus) returns (RobotStatus);
+  rpc SendHeartbeat(HeartbeatRequest) returns (HeartbeatResponse);
 }
 

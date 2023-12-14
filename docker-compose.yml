@@ -12,6 +12,7 @@ services:
   robot1:
     build:
       context: ./app/robot
+      dockerfile: Dockerfile.robot1
     depends_on:
       - robot-controller
     networks:
@@ -20,6 +21,7 @@ services:
   robot2:
     build:
       context: ./app/robot
+      dockerfile: Dockerfile.robot2
     depends_on:
       - robot-controller
     networks:

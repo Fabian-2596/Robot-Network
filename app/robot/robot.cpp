@@ -20,8 +20,8 @@ public:
         RobotStatus response;
         grpc::ClientContext context;
         grpc::Status status = stub_->RegisterRobot(&context, registration, &response);
-
         if (status.ok()) {
+            robotid = registration.robot_id();
             std::cout << "Robot registration successful. ID: " << registration.robot_id();
             std::cout << ", Name: " << registration.robot_name() << std::endl;
         } else {
@@ -57,6 +57,20 @@ public:
         }
         return response;
     }
+    void SendHeartbeat() {
+        HeartbeatRequest request;
+        request.set_robot_id(robotid);
+        HeartbeatResponse response;
+
+        grpc::ClientContext context;
+        grpc::Status status = stub_->SendHeartbeat(&context, request, &response);
+
+        if (status.ok()) {
+            std::cout << "Heartbeat sent successfully." << std::endl;
+        } else {
+            std::cerr << "Failed to send heartbeat: " << status.error_message() << std::endl;
+        }
+    }
 
 private:
     std::unique_ptr<RobotControl::Stub> stub_;
@@ -66,7 +80,7 @@ private:
 bool loop{true};
 void sendStatus(std::shared_ptr<grpc::Channel> channel, int robotID, bool status){
     RobotChangeStatus chStatus;
-    chStatus.set_robot_id(robotID);
+    chStatus.set_robot_id(robotid);
     chStatus.set_is_active(status);
 
     RobotClient robotClient(channel);
@@ -80,23 +94,33 @@ void sendStatus(std::shared_ptr<grpc::Channel> channel, int robotID, bool status
     robotClient.SetRobotStatus(chStatus);
 }
 
-int main() {
+void sendBeat(std::shared_ptr<grpc::Channel> channel){
+    RobotClient robotClient(channel);
+    
+    while (loop)
+    {
+        robotClient.SendHeartbeat();
+        std::this_thread::sleep_for(std::chrono::seconds(5));
+    }
+}
+
+
+int main(int argc, char *argv[]) {
     std::shared_ptr<grpc::Channel> channel = grpc::CreateChannel("robot-controller:50051", grpc::InsecureChannelCredentials());
     RobotClient robotClient(channel);
 
     RobotRegistration registration;
-    registration.set_robot_name("Clara");
-    registration.set_robot_id(5);
+    registration.set_robot_name(argv[2]);
+    registration.set_robot_id(stoi(argv[1]));
     RobotStatus status = robotClient.RegisterRobot(registration);
 
     status = robotClient.GetRobotStatus(registration);
+    thread thr_beat(sendBeat, channel);
+    //thread thr_sendStatus(sendStatus,channel,5,true);
+    //this_thread::sleep_for(chrono::seconds(20));
+    //loop = false;
 
-    thread thr_sendStatus(sendStatus,channel,5,true);
-
-    this_thread::sleep_for(chrono::seconds(20));
-    loop = false;
-
-    thr_sendStatus.join();
-
+    //thr_sendStatus.join();
+    thr_beat.join();
     return 0;
 }

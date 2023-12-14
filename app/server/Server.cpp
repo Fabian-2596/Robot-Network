@@ -8,6 +8,7 @@
 #include <vector>
 #include <chrono>
 #include <thread>
+#include <map>
 #include <grpcpp/grpcpp.h>
 #include "server.grpc.pb.h"
 #include "DB/DB.cpp"
@@ -20,7 +21,9 @@ using grpc::Status;
 
 const int PORT = 8080;
 int robotid = 0;
+std::map<int, time_t> robots;
 DB myDB{};
+const time_t limit = 10;
 
 void handle_request(int client_socket)
 {
@@ -43,14 +46,23 @@ void handle_request(int client_socket)
     if (request_type == "GET")
     {
         std::string response;
+        std::string players = "";
         if (path == "/status")
         {
+            for(int i = 0; i < myDB.getTeamSize(); i++){
+                if(myDB.getTeam().playerList.at(i).isActive == true){
+                    players += to_string(myDB.getTeam().playerList.at(i).id) + " : " + myDB.getTeam().playerList.at(i).name + "\n";
+                }
+            }
+            response = "HTTP/1.1 200 OK\r\n\r\nSystem Status: Es sind folgende Roboter aktiv\n" + players + "\n";
+        }
             // int cnt_pl = myDB.getCountSpieler();
+            /*
             int cnt_pl = myDB.getTeamSize();
             switch (cnt_pl)
             {
             case 0:
-                response = "HTTP/1.1 200 OK\r\n\r\nSystem Status: Im Moment ist KEIN Roboter aktiv\n";
+                response = "HTTP/1.1 200 OK\r\n\r\nSystem Status: Im Moment ist KEIN Roboter aktiv\n" + ;
                 break;
             case 1:
                 response = "HTTP/1.1 200 OK\r\n\r\nSystem Status: Im Moment ist nur 1 Roboter aktiv\n";
@@ -60,6 +72,7 @@ void handle_request(int client_socket)
                 break;
             }
         }
+        */
         else if (path == "/captain")
         {
             response = "HTTP/1.1 200 OK\r\n\r\nDer aktuelle Kapitän ist " + myDB.getCaptain().player.name + "\n";
@@ -126,6 +139,12 @@ public:
         p.id = request->robot_id();
         p.name = request->robot_name();
         p.isActive = response->is_active();
+        for(int i = 0; i < myDB.getTeamSize(); i++){
+            if (myDB.getTeam().playerList.at(i).id == p.id && myDB.getTeam().playerList.at(i).name == p.name) {
+                myDB.setPlayerStatus(myDB.getTeam().playerList.at(i).id, true);
+                return grpc::Status::OK;
+            }
+        }
         myDB.addPlayer(p);
         return grpc::Status::OK;
     }
@@ -133,8 +152,8 @@ public:
     grpc::Status GetRobotStatus(grpc::ServerContext *context, const RobotRegistration *request, RobotStatus *response) override
     {
         for (int i{}; i < myDB.getTeamSize(); ++i){
-            if (myDB.getTeam().playerList[i].id == request->robot_id()){
-                response->set_is_active(myDB.getTeam().playerList[i].isActive);
+            if (myDB.getTeam().playerList.at(i).id == request->robot_id()){
+                response->set_is_active(myDB.getTeam().playerList.at(i).isActive);
                 return grpc::Status::OK;
             }
         }
@@ -148,15 +167,39 @@ public:
         }
         return grpc::Status::OK;
     }
+
+    grpc::Status SendHeartbeat(grpc::ServerContext* context, const HeartbeatRequest* request, HeartbeatResponse* response) override {
+        int id = request->robot_id();
+        response->set_success(true);
+        time_t lastBeat = time(NULL);
+        if(robots.find(id) != robots.end()){
+            robots.erase(id);
+        }
+        robots.insert({id, lastBeat});
+        std::cout << "Received heartbeat from client: " << id << std::endl;
+        return grpc::Status::OK;
+    }
 };
+
 
 void CheckPlayerState(){
     while (true)
     {
         vector<string> unactivePlayer{};
-        this_thread::sleep_for(chrono::seconds(10));
+        this_thread::sleep_for(chrono::seconds(5));
 
-        for (int i{}; i < myDB.getTeamSize(); ++i)
+        for (auto const& x : robots){
+            time_t t = time(nullptr);
+            if((t - x.second) > limit){
+                for(int i = 0; i < myDB.getTeamSize(); i++){
+                    if(myDB.getTeam().playerList.at(i).id == x.first){
+                        myDB.setPlayerStatus(myDB.getTeam().playerList.at(i).id, false);
+                    }
+                }
+            }
+        }
+
+        for (int i = 0; i < myDB.getTeamSize(); i++)
         {
             if (myDB.getTeam().playerList.at(i).isActive == false){
                 unactivePlayer.push_back(myDB.getTeam().playerList.at(i).name);
@@ -164,7 +207,7 @@ void CheckPlayerState(){
         }
         if (unactivePlayer.size() != 0){
             cout << "Status: Player ";
-            for (int i{}; i < unactivePlayer.size(); ++i){
+            for (int i{}; i < unactivePlayer.size(); i++){
                 cout << unactivePlayer[i];
                 if (i < (unactivePlayer.size()-1)){
                     cout << " and ";
@@ -177,38 +220,6 @@ void CheckPlayerState(){
         }
     }
      
-}
-
-void httpServer()
-{
-    int server_socket, client_socket;
-    struct sockaddr_in server_address, client_address;
-    server_socket = socket(AF_INET, SOCK_STREAM, 0);
-    server_address.sin_family = AF_INET;
-    server_address.sin_addr.s_addr = INADDR_ANY;
-    server_address.sin_port = htons(PORT);
-    bind(server_socket, (struct sockaddr *)&server_address, sizeof(server_address));
-    listen(server_socket, 5);
-
-    while (true)
-    {
-        socklen_t client_address_len = sizeof(client_address);
-        cout << "HTTP Server waiting for connections" << endl;
-        myDB.setConStatus("waiting");
-        client_socket = accept(server_socket, (struct sockaddr *)&client_address, &client_address_len);
-        if (client_socket < 0)
-        {
-            cerr << "Error in HTTP connection acceptance." << endl;
-            return;
-        }
-        myDB.setConStatus("processing");
-        thread http_thread(handle_request, client_socket);
-        cout << "HTTP Thread " << http_thread.get_id() << " created" << endl;
-        myDB.setConStatus("task finished");
-    }
-
-    close(server_socket);
-    myDB.setConStatus("exited");
 }
 
 void grpcServer()
@@ -253,7 +264,6 @@ int main()
         http_thread.detach();
         myDB.setConStatus("task finished");
     }
-
     thr_checkStatus.join();
     close(server_socket);
     myDB.setConStatus("exited");

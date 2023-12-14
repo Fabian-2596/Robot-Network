@@ -50,7 +50,6 @@ public:
   void setConStatus(string stat) { this->controllerStatus = stat; }
   void setCountPlayer(int count) { this->countPlayer = count; }
   bool setPlayerStatus(int id, bool status);
-
   void addPOSTData(string postData) { this->POSTData.push_back(postData); }
   void addPlayer(Player p);
 
@@ -145,7 +144,7 @@ bool DB::removePlayer(Player p)
 
 bool DB::setPlayerStatus(int id, bool status)
 {
-  for (int i{}; i < getTeamSize(); ++i)
+  for (int i{}; i < getTeamSize(); i++)
   {
     if (team.playerList.at(i).id == id)
     {
