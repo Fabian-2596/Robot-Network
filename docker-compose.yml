@@ -1,5 +1,6 @@
 version: '3'
 services:
+
   robot-controller:
     build:
       context: ./app/server
@@ -17,7 +18,7 @@ services:
       - robot-controller
     networks:
       - robot-network
-      
+
   robot2:
     build:
       context: ./app/robot
@@ -26,6 +27,25 @@ services:
       - robot-controller
     networks:
       - robot-network
+
+  robot3:
+    build:
+      context: ./app/robot
+      dockerfile: Dockerfile.robot3
+    depends_on:
+      - robot-controller
+    networks:
+      - robot-network
+
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+    networks:
+      - robot-network
+  
 
 networks:
   robot-network:

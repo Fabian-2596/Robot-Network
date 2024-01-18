@@ -1,0 +1,27 @@
+FROM ubuntu:latest
+
+RUN apt-get update && \
+    apt-get install -y build-essential cmake libssl-dev git
+
+RUN apt-get install -y libgrpc++-dev protobuf-compiler-grpc
+
+RUN git clone https://github.com/eclipse/paho.mqtt.c.git
+
+RUN cd paho.mqtt.c && \
+    cmake -Bbuild -H. -DPAHO_WITH_SSL=ON && \
+    cmake --build build/ --target install
+
+RUN git clone https://github.com/eclipse/paho.mqtt.cpp.git && \ 
+    cd paho.mqtt.cpp && \
+    git checkout v1.2.0
+
+RUN cd paho.mqtt.cpp && \
+    cmake . && \
+    make && \
+    make install
+RUN ldconfig
+WORKDIR /
+COPY . . 
+RUN protoc -I=. --cpp_out=. --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` robot.proto
+RUN g++ -std=c++11 -o robot robot.cpp robot.grpc.pb.cc robot.pb.cc -lgrpc++ -lprotobuf -lpaho-mqttpp3 -lpaho-mqtt3as -pthread
+CMD ["./robot", "3", "Susanne"]

@@ -12,6 +12,7 @@
 #include <grpcpp/grpcpp.h>
 #include "server.grpc.pb.h"
 #include "DB/DB.cpp"
+#include <mqtt/async_client.h>
 
 using namespace std;
 using grpc::Server;
@@ -24,6 +25,63 @@ int robotid = 0;
 std::map<int, time_t> robots;
 DB myDB{};
 const time_t limit = 10;
+const std::string ELECTION_TOPIC = "election";
+const std::string SERVER_ADDRESS{"tcp://mosquitto:1883"};
+
+class MyCallback : public virtual mqtt::callback {
+public:
+    virtual void connection_lost(const std::string& cause) override {
+        std::cout << "Connection lost: " << cause << std::endl;
+    }
+
+    virtual void delivery_complete(mqtt::delivery_token_ptr tok) override {
+        std::cout << "Delivery complete for token: " << tok->get_message_id() << std::endl;
+    }
+
+    void message_arrived(mqtt::const_message_ptr msg) override {
+        std::string payload = msg->to_string();
+        for(int i = 0; i < myDB.getTeamSize(); i++){
+            if(myDB.getTeam().playerList.at(i).id == stoi(payload)){
+                Captain cp;
+                Player pl;
+                pl = myDB.getTeam().playerList.at(i);
+                cp.player = pl;
+                myDB.setCaptain(cp);
+                cout << "new captain is " << myDB.getTeam().playerList.at(i).name << endl;
+            }
+        }
+        
+    }
+};
+
+void startElection(){
+    mqtt::create_options createOpts(MQTTVERSION_5);
+    mqtt::async_client client(SERVER_ADDRESS, "server", createOpts);
+    MyCallback callback;
+    client.set_callback(callback);
+    try {
+        cout << "\nConnecting..." << endl;
+		mqtt::token_ptr tok = client.connect();
+		cout << "Waiting for the connection..." << endl;
+		tok->wait();
+		cout << "  ...OK" << endl;
+
+        std::cout << "Initiating the election process..." << std::endl;
+        int qos = 0;
+        mqtt::message_ptr pubmsg = mqtt::make_message(ELECTION_TOPIC, "start1");
+        pubmsg->set_qos(qos);
+        mqtt::delivery_token_ptr pubtok = client.publish(pubmsg);
+        pubtok->wait();
+        cout << "data published" << std::endl;
+        client.subscribe("leader", 1)->wait();
+        std::this_thread::sleep_for(std::chrono::seconds(5));
+
+        client.disconnect()->wait();
+        std::cout << "Disconnected." << std::endl;
+    } catch (const mqtt::exception& exc) {
+        std::cerr << "Error: " << exc.what() << std::endl;
+    }
+}
 
 void handle_request(int client_socket)
 {
@@ -56,23 +114,6 @@ void handle_request(int client_socket)
             }
             response = "HTTP/1.1 200 OK\r\n\r\nSystem Status: Es sind folgende Roboter aktiv\n" + players + "\n";
         }
-            // int cnt_pl = myDB.getCountSpieler();
-            /*
-            int cnt_pl = myDB.getTeamSize();
-            switch (cnt_pl)
-            {
-            case 0:
-                response = "HTTP/1.1 200 OK\r\n\r\nSystem Status: Im Moment ist KEIN Roboter aktiv\n" + ;
-                break;
-            case 1:
-                response = "HTTP/1.1 200 OK\r\n\r\nSystem Status: Im Moment ist nur 1 Roboter aktiv\n";
-                break;
-            default:
-                response = "HTTP/1.1 200 OK\r\n\r\nSystem Status: Im Moment sind " + to_string(cnt_pl) + " Roboter aktiv\n";
-                break;
-            }
-        }
-        */
         else if (path == "/captain")
         {
             response = "HTTP/1.1 200 OK\r\n\r\nDer aktuelle Kapitän ist " + myDB.getCaptain().player.name + "\n";
@@ -83,7 +124,8 @@ void handle_request(int client_socket)
         }
         else if (path == "/election")
         {
-            response = "HTTP/1.1 200 OK\r\n\r\nNeue Kapitänswahl wird angestoßen (Noch keine Funktion)\n";
+            startElection();
+            response = "HTTP/1.1 200 OK\r\n\r\nNeue Kapitänswahl wurde angestoßen\n";
         }
         else if (path == "/lastPOST")
         {
@@ -119,7 +161,7 @@ void handle_request(int client_socket)
         }
         std::string response = "HTTP/1.1 200 OK\r\n\r\nDaten erhalten : " + data + "\n";
         myDB.addPOSTData(data);
-        // myDB.persistPOST();
+        //myDB.persistPOST();
         write(client_socket, response.c_str(), response.length());
         auto end_time = chrono::high_resolution_clock::now();
         chrono::duration<double> rtt = end_time - start_time;
@@ -154,6 +196,7 @@ public:
         for (int i{}; i < myDB.getTeamSize(); ++i){
             if (myDB.getTeam().playerList.at(i).id == request->robot_id()){
                 response->set_is_active(myDB.getTeam().playerList.at(i).isActive);
+                cout << "Status of robot " << myDB.getTeam().playerList.at(i).name << " is " <<myDB.getTeam().playerList.at(i).isActive << endl;
                 return grpc::Status::OK;
             }
         }
@@ -181,7 +224,6 @@ public:
     }
 };
 
-
 void CheckPlayerState(){
     while (true)
     {
@@ -206,6 +248,7 @@ void CheckPlayerState(){
             }
         }
         if (unactivePlayer.size() != 0){
+            startElection();
             cout << "Status: Player ";
             for (int i{}; i < unactivePlayer.size(); i++){
                 cout << unactivePlayer[i];
@@ -219,7 +262,6 @@ void CheckPlayerState(){
             cout << "Status: All Players are active" << endl;
         }
     }
-     
 }
 
 void grpcServer()
