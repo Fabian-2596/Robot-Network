@@ -147,6 +147,12 @@ void handle_request(int client_socket)
             role = "Verteidiger";
             response = "HTTP/1.1 200 OK\r\n\r\nNeue Kapitänswahl wurde angestoßen für Verteidiger\n";
         }
+        else if (path == "/election")
+        {
+            start = true;
+            role = "election";
+            response = "HTTP/1.1 200 OK\r\n\r\nNeue Kapitänswahl wurde angestoßen für Verteidiger\n";
+        }
         else if(path == "/election/stuermer")
         {
             start = true;
