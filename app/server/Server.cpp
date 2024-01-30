@@ -12,76 +12,95 @@
 #include <grpcpp/grpcpp.h>
 #include "server.grpc.pb.h"
 #include "DB/DB.cpp"
-#include <mqtt/async_client.h>
 
 using namespace std;
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
+using grpc::Channel;
+using grpc::ClientContext;
 
 const int PORT = 8080;
 int robotid = 0;
 std::map<int, time_t> robots;
 DB myDB{};
 const time_t limit = 10;
-const std::string ELECTION_TOPIC = "election";
-const std::string SERVER_ADDRESS{"tcp://mosquitto:1883"};
+bool start = false;
+string role = "";
 
-class MyCallback : public virtual mqtt::callback {
+class RobotControlServiceImpl final : public RobotControl::Service
+{
 public:
-    virtual void connection_lost(const std::string& cause) override {
-        std::cout << "Connection lost: " << cause << std::endl;
-    }
-
-    virtual void delivery_complete(mqtt::delivery_token_ptr tok) override {
-        std::cout << "Delivery complete for token: " << tok->get_message_id() << std::endl;
-    }
-
-    void message_arrived(mqtt::const_message_ptr msg) override {
-        std::string payload = msg->to_string();
+    grpc::Status RegisterRobot(grpc::ServerContext *context, const RobotRegistration *request, RobotStatus *response) override
+    {
+        response->set_is_active(true);
+        Player p;
+        p.id = request->robot_id();
+        p.name = request->robot_name();
+        p.role = request->robot_role();
+        p.isActive = response->is_active();
         for(int i = 0; i < myDB.getTeamSize(); i++){
-            if(myDB.getTeam().playerList.at(i).id == stoi(payload)){
+            if (myDB.getTeam().playerList.at(i).id == p.id && myDB.getTeam().playerList.at(i).name == p.name) {
+                myDB.setPlayerStatus(myDB.getTeam().playerList.at(i).id, true);
+                return grpc::Status::OK;
+            }
+        }
+        myDB.addPlayer(p);
+        return grpc::Status::OK;
+    }
+
+    grpc::Status GetRobotStatus(grpc::ServerContext *context, const RobotRegistration *request, RobotStatus *response) override
+    {
+        for (int i{}; i < myDB.getTeamSize(); ++i){
+            if (myDB.getTeam().playerList.at(i).id == request->robot_id()){
+                response->set_is_active(myDB.getTeam().playerList.at(i).isActive);
+                cout << "Status of robot " << myDB.getTeam().playerList.at(i).name << " is " <<myDB.getTeam().playerList.at(i).isActive << endl;
+                return grpc::Status::OK;
+            }
+        }
+        return grpc::Status::CANCELLED;
+    }
+
+    grpc::Status SendHeartbeat(grpc::ServerContext* context, const HeartbeatRequest* request, HeartbeatResponse* response) override {
+        int id = request->robot_id();
+        response->set_success(true);
+        time_t lastBeat = time(NULL);
+        if(robots.find(id) != robots.end()){
+            robots.erase(id);
+        }
+        robots.insert({id, lastBeat});
+        std::cout << "Received heartbeat from client: " << id << std::endl;
+        return grpc::Status::OK;
+    }
+
+    grpc::Status StartElection(grpc::ServerContext* context, grpc::ServerReaderWriter<Response, Request>* stream) override {
+        Request request;
+        while(stream->Read(&request)){
+            Response response;
+            response.set_robot_id(1);
+            response.set_robot_role(role);
+            response.set_start(start);
+            stream->Write(response);
+        }
+        return grpc::Status::OK;
+    }
+
+    grpc::Status ResultElection(grpc::ServerContext* context, const NewCaptainRequest* request, NewCaptainResponse* response) override {
+        for(int i = 0; i < myDB.getTeamSize(); i++){
+            if(myDB.getTeam().playerList.at(i).id == request->robot_id()){
                 Captain cp;
                 Player pl;
                 pl = myDB.getTeam().playerList.at(i);
                 cp.player = pl;
                 myDB.setCaptain(cp);
-                cout << "new captain is " << myDB.getTeam().playerList.at(i).name << endl;
+                start = false;
+                role = "";
             }
         }
-        
+        return grpc::Status::OK;
     }
 };
-
-void startElection(){
-    mqtt::create_options createOpts(MQTTVERSION_5);
-    mqtt::async_client client(SERVER_ADDRESS, "server", createOpts);
-    MyCallback callback;
-    client.set_callback(callback);
-    try {
-        cout << "\nConnecting..." << endl;
-		mqtt::token_ptr tok = client.connect();
-		cout << "Waiting for the connection..." << endl;
-		tok->wait();
-		cout << "  ...OK" << endl;
-
-        std::cout << "Initiating the election process..." << std::endl;
-        int qos = 0;
-        mqtt::message_ptr pubmsg = mqtt::make_message(ELECTION_TOPIC, "start1");
-        pubmsg->set_qos(qos);
-        mqtt::delivery_token_ptr pubtok = client.publish(pubmsg);
-        pubtok->wait();
-        cout << "data published" << std::endl;
-        client.subscribe("leader", 1)->wait();
-        std::this_thread::sleep_for(std::chrono::seconds(5));
-
-        client.disconnect()->wait();
-        std::cout << "Disconnected." << std::endl;
-    } catch (const mqtt::exception& exc) {
-        std::cerr << "Error: " << exc.what() << std::endl;
-    }
-}
 
 void handle_request(int client_socket)
 {
@@ -122,10 +141,17 @@ void handle_request(int client_socket)
         {
             response = "HTTP/1.1 200 OK\r\n\r\nController Status: Der Zustand des Controllers ist \"" + myDB.getConStatus() + "\"\n";
         }
-        else if (path == "/election")
+        else if (path == "/election/verteidiger")
         {
-            startElection();
-            response = "HTTP/1.1 200 OK\r\n\r\nNeue Kapitänswahl wurde angestoßen\n";
+            start = true;
+            role = "Verteidiger";
+            response = "HTTP/1.1 200 OK\r\n\r\nNeue Kapitänswahl wurde angestoßen für Verteidiger\n";
+        }
+        else if(path == "/election/stuermer")
+        {
+            start = true;
+            role = "Stuermer";
+            response = "HTTP/1.1 200 OK\r\n\r\nNeue Kapitänswahl wurde angestoßen für Stuermer\n";
         }
         else if (path == "/lastPOST")
         {
@@ -171,59 +197,6 @@ void handle_request(int client_socket)
     close(client_socket);
 }
 
-class RobotControlServiceImpl final : public RobotControl::Service
-{
-public:
-    grpc::Status RegisterRobot(grpc::ServerContext *context, const RobotRegistration *request, RobotStatus *response) override
-    {
-        response->set_is_active(true);
-        Player p;
-        p.id = request->robot_id();
-        p.name = request->robot_name();
-        p.isActive = response->is_active();
-        for(int i = 0; i < myDB.getTeamSize(); i++){
-            if (myDB.getTeam().playerList.at(i).id == p.id && myDB.getTeam().playerList.at(i).name == p.name) {
-                myDB.setPlayerStatus(myDB.getTeam().playerList.at(i).id, true);
-                return grpc::Status::OK;
-            }
-        }
-        myDB.addPlayer(p);
-        return grpc::Status::OK;
-    }
-
-    grpc::Status GetRobotStatus(grpc::ServerContext *context, const RobotRegistration *request, RobotStatus *response) override
-    {
-        for (int i{}; i < myDB.getTeamSize(); ++i){
-            if (myDB.getTeam().playerList.at(i).id == request->robot_id()){
-                response->set_is_active(myDB.getTeam().playerList.at(i).isActive);
-                cout << "Status of robot " << myDB.getTeam().playerList.at(i).name << " is " <<myDB.getTeam().playerList.at(i).isActive << endl;
-                return grpc::Status::OK;
-            }
-        }
-        return grpc::Status::CANCELLED;
-    }
-
-    grpc::Status SetRobotStatus(grpc::ServerContext *context, const RobotSetStatus *request, RobotStatus *response) override
-    {
-        if (myDB.setPlayerStatus(request->robot_id(), request->is_active())){
-            return grpc::Status::OK;
-        }
-        return grpc::Status::OK;
-    }
-
-    grpc::Status SendHeartbeat(grpc::ServerContext* context, const HeartbeatRequest* request, HeartbeatResponse* response) override {
-        int id = request->robot_id();
-        response->set_success(true);
-        time_t lastBeat = time(NULL);
-        if(robots.find(id) != robots.end()){
-            robots.erase(id);
-        }
-        robots.insert({id, lastBeat});
-        std::cout << "Received heartbeat from client: " << id << std::endl;
-        return grpc::Status::OK;
-    }
-};
-
 void CheckPlayerState(){
     while (true)
     {
@@ -248,7 +221,6 @@ void CheckPlayerState(){
             }
         }
         if (unactivePlayer.size() != 0){
-            startElection();
             cout << "Status: Player ";
             for (int i{}; i < unactivePlayer.size(); i++){
                 cout << unactivePlayer[i];

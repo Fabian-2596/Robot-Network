@@ -13,8 +13,10 @@ using grpc::Status;
 using namespace std;
 int robotid = 0;
 bool isCaptain = false;
-const std::string ELECTION_TOPIC = "election";
+string role;
+std::string ELECTION_TOPIC = "election";
 const std::string SERVER_ADDRESS = "tcp://mosquitto:1883";
+std::shared_ptr<grpc::Channel> channel;
 
 class ElectionCallback : public virtual mqtt::callback, public virtual mqtt::iaction_listener {
 public:
@@ -34,29 +36,32 @@ public:
 
     void message_arrived(mqtt::const_message_ptr msg) override {
         std::string payload = msg->to_string();
+        isCaptain = false;
         std::string tmp = "start" + std::to_string(robotid);
-        std::string tmp2 = "election" + std::to_string(robotid);
-        if (payload == tmp) {
+        size_t colon_pos = payload.find(";");
+        std::string topic = payload.substr(colon_pos + 1);
+        if (payload == tmp + ";" + topic) {
             std::cout << "Election process initiated by the server." << std::endl;
-            start_election();
+            start_election(topic);
         } else if (payload.find("election:") == 0) {
             cout << "handle election message from robot " << robotid << endl;
-            handle_election_message(payload);
-        }
+            string msg = payload.substr(0, colon_pos);
+            handle_election_message(msg, topic);
+        }            
     }
 
-    void start_election() {
+    void start_election(string topic) {
         cout << "started election" << endl;
-        send_election_message();    
+        send_election_message(topic);
     }
 
-    void send_election_message() {
+    void send_election_message(string topic) {
         cout << "election message sent from robot " << robotid << endl;
-        std::string election_message = "election:" + to_string(robotid);
-        client_.publish(ELECTION_TOPIC, election_message, 2, false);
+        std::string election_message = "election:" + to_string(robotid) + ";" + topic;
+        client_.publish(topic, election_message, 2, false);
     }
 
-    void handle_election_message(const std::string& message) {
+    void handle_election_message(const std::string& message, string topic) {
         size_t colon_pos = message.find(":");
         std::string sender_id = message.substr(colon_pos + 1);
         if (sender_id > to_string(robotid)) {
@@ -64,11 +69,10 @@ public:
         } 
         else if(sender_id == to_string(robotid)){
             isCaptain = true;
-            cout << "robot: " << robotid << " is now leader" << endl; 
-            client_.publish("leader", to_string(robotid), 2, false);
+            cout << "robot: " << robotid << " is now leader" << endl;            
         }
         else if(sender_id < to_string(robotid)){
-            send_election_message();
+            send_election_message(topic);
         }
     }
     
@@ -89,12 +93,13 @@ public:
         grpc::Status status = stub_->RegisterRobot(&context, registration, &response);
         if (status.ok()) {
             robotid = registration.robot_id();
+            role = registration.robot_role();
             std::cout << "Robot registration successful. ID: " << registration.robot_id();
-            std::cout << ", Name: " << registration.robot_name() << std::endl;
+            std::cout << ", Name: " << registration.robot_name();
+            std::cout << ", Rolle: " << registration.robot_role() << endl;
         } else {
             std::cerr << "Error in robot registration: " << status.error_message() << std::endl;
         }
-
         return response;
     }
 
@@ -127,6 +132,52 @@ public:
         }
     }
 
+    void StartElection() {
+        ClientContext context;
+        Request request;
+        Response response;
+        std::shared_ptr<grpc::ClientReaderWriter<Request, Response>> stream(stub_->StartElection(&context));
+        while(true){ 
+            stream->Write(request);
+            stream->Read(&response);
+            if(response.start() == true && robotid == response.robot_id()){
+                cout << "Election started for role: " << response.robot_role() << endl;
+                    mqtt::async_client client(SERVER_ADDRESS, to_string(0));
+                    ElectionCallback cb(client);
+                    client.set_callback(cb);
+
+                    try {
+                        cout << "\nConnecting..." << endl;
+                        mqtt::token_ptr tok = client.connect();
+                        cout << "Waiting for the connection..." << endl;
+                        tok->wait();
+                        cout << "  ...OK" << endl;
+                        int qos = 0;
+                        string tmp = "start" + to_string(robotid) + ";" + response.robot_role();
+                        mqtt::message_ptr pubmsg = mqtt::make_message(ELECTION_TOPIC, tmp);
+                        pubmsg->set_qos(qos);
+                        mqtt::delivery_token_ptr pubtok = client.publish(pubmsg);
+                        pubtok->wait();
+                        cout << "data published" << std::endl;
+                        client.disconnect();
+                    } catch (const mqtt::exception& exc) {
+                        std::cerr << "Error: " << exc.what() << std::endl;
+                    }
+                
+            }
+            //std::this_thread::sleep_for(std::chrono::seconds(1));
+        }
+    }
+
+    void newCaptain() {
+        NewCaptainRequest request;
+        request.set_robot_id(robotid);
+        NewCaptainResponse response;
+        grpc::ClientContext context;
+        grpc::Status status = stub_->ResultElection(&context, request, &response);
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+
 private:
     std::unique_ptr<RobotControl::Stub> stub_;
 };
@@ -143,14 +194,27 @@ void sendBeat(std::shared_ptr<grpc::Channel> channel){
     }
 }
 
+void election(std::shared_ptr<grpc::Channel> channel){
+    RobotClient robotClient(channel);
+    robotClient.StartElection();
+}
+
+void checkCaptain(std::shared_ptr<grpc::Channel> channel){
+    RobotClient robotClient(channel);
+    while(true){
+        if(isCaptain)
+            robotClient.newCaptain();
+     }
+}
 
 int main(int argc, char *argv[]) {
-    std::shared_ptr<grpc::Channel> channel = grpc::CreateChannel("robot-controller:50051", grpc::InsecureChannelCredentials());
+    channel = grpc::CreateChannel("robot-controller:50051", grpc::InsecureChannelCredentials());
     RobotClient robotClient(channel);
 
     RobotRegistration registration;
     registration.set_robot_name(argv[2]);
     registration.set_robot_id(stoi(argv[1]));
+    registration.set_robot_role(argv[3]);
     RobotStatus status = robotClient.RegisterRobot(registration);
 
     mqtt::async_client client(SERVER_ADDRESS, argv[1]);
@@ -164,13 +228,16 @@ int main(int argc, char *argv[]) {
 		tok->wait();
 		cout << "  ...OK" << endl;
         client.subscribe(ELECTION_TOPIC, 1)->wait();
-
+        client.subscribe(role, 1)->wait();
+        cout << "test" << endl;
     } catch (const mqtt::exception& exc) {
         std::cerr << "Error: " << exc.what() << std::endl;
     }
 
     status = robotClient.GetRobotStatus(registration);
     thread thr_beat(sendBeat, channel);
+    thread thr_election(election, channel);
+    thread thr_check(checkCaptain, channel);
     thr_beat.join();
     return 0;
 }

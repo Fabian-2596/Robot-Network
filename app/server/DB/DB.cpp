@@ -11,6 +11,7 @@ struct Player
 {
   int id;
   string name;
+  string role;
   bool isActive;
 };
 struct Captain

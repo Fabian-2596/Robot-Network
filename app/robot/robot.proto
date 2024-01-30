@@ -7,6 +7,7 @@ message RobotStatus {
 message RobotRegistration {
   int32 robot_id = 1;
   string robot_name = 2;  
+  string robot_role = 3;
 }
 
 message HeartbeatRequest {
@@ -17,11 +18,28 @@ message HeartbeatResponse {
   bool success = 1;
 }
 
-// Definition des Dienstes
+message Request {
+  bool ans = 1;
+}
+
+message Response {
+  int32 robot_id = 1;
+  string robot_role = 2;
+  bool start = 3;
+}
+
+message NewCaptainRequest {
+  int32 robot_id = 1;
+}
+
+message NewCaptainResponse {
+
+}
+
 service RobotControl {
   rpc RegisterRobot(RobotRegistration) returns (RobotStatus);
   rpc GetRobotStatus(RobotRegistration) returns (RobotStatus);
   rpc SendHeartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+  rpc StartElection(stream Request) returns (stream Response);
+  rpc ResultElection(NewCaptainRequest) returns (NewCaptainResponse);
 }
-
-

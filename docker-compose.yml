@@ -37,6 +37,15 @@ services:
     networks:
       - robot-network
 
+  robot4:
+    build:
+      context: ./app/robot
+      dockerfile: Dockerfile.robot4
+    depends_on:
+      - robot-controller
+    networks:
+      - robot-network
+
   mosquitto:
     image: eclipse-mosquitto:latest
     ports:
