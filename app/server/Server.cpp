@@ -28,6 +28,8 @@ DB myDB{};
 const time_t limit = 10;
 bool start = false;
 string role = "";
+std::chrono::steady_clock::time_point start_time_election;
+std::chrono::steady_clock::time_point end_time_election;
 
 class RobotControlServiceImpl final : public RobotControl::Service
 {
@@ -81,6 +83,9 @@ public:
             response.set_robot_id(1);
             response.set_robot_role(role);
             response.set_start(start);
+            if(start == true){
+                start_time_election = std::chrono::steady_clock::now();
+            }
             stream->Write(response);
         }
         return grpc::Status::OK;
@@ -89,11 +94,16 @@ public:
     grpc::Status ResultElection(grpc::ServerContext* context, const NewCaptainRequest* request, NewCaptainResponse* response) override {
         for(int i = 0; i < myDB.getTeamSize(); i++){
             if(myDB.getTeam().playerList.at(i).id == request->robot_id()){
+                if(request->robot_id() != myDB.getCaptain().player.id){
+                end_time_election = std::chrono::steady_clock::now();
+                chrono::duration<double> rtt = end_time_election - start_time_election;
+                cout << "Election took: " << rtt.count() << " seconds" << endl;
                 Captain cp;
                 Player pl;
                 pl = myDB.getTeam().playerList.at(i);
                 cp.player = pl;
                 myDB.setCaptain(cp);
+                }
                 start = false;
                 role = "";
             }
@@ -151,7 +161,7 @@ void handle_request(int client_socket)
         {
             start = true;
             role = "election";
-            response = "HTTP/1.1 200 OK\r\n\r\nNeue Kapitänswahl wurde angestoßen für Verteidiger\n";
+            response = "HTTP/1.1 200 OK\r\n\r\nNeue Kapitänswahl wurde angestoßen für Alle\n";
         }
         else if(path == "/election/stuermer")
         {

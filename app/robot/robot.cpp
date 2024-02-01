@@ -175,7 +175,7 @@ public:
         NewCaptainResponse response;
         grpc::ClientContext context;
         grpc::Status status = stub_->ResultElection(&context, request, &response);
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        //std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 
 private:
