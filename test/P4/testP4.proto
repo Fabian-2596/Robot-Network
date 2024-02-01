@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+// Definition der Nachrichten
+
+message RobotStatus {
+  bool is_active = 1; 
+  int32 robot_id = 2;
+}
+
+message RobotRegistration {
+  int32 robot_id = 1;
+  string robot_name = 2;  
+}
+
+
+message ServerRequest {
+  string name = 1;
+}
+
+message DBResponse{
+  string captain_name = 1;
+  int32 captain_id = 2;
+  repeated string player_name = 3;
+  repeated int32 player_id = 4;
+  int32 highest_id = 5;
+}
+
+
+// Definition des Dienstes
+service BackupControl {
+  rpc RegisterRobot(RobotRegistration) returns (RobotStatus);
+  rpc SyncDB(ServerRequest) returns (DBResponse);
+}
+

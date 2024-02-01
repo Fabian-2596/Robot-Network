@@ -2,6 +2,7 @@ syntax = "proto3";
 
 message RobotStatus {
   bool is_active = 1; 
+  int32 robot_id = 2;
 }
 
 message RobotRegistration {
@@ -16,6 +17,11 @@ message HeartbeatRequest {
 
 message HeartbeatResponse {
   bool success = 1;
+  bool not_registered = 2;
+}
+
+message Ping {
+  
 }
 
 message Request {
@@ -40,6 +46,7 @@ service RobotControl {
   rpc RegisterRobot(RobotRegistration) returns (RobotStatus);
   rpc GetRobotStatus(RobotRegistration) returns (RobotStatus);
   rpc SendHeartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+  rpc Ping_gRPC(Ping) returns (Ping);
   rpc StartElection(stream Request) returns (stream Response);
   rpc ResultElection(NewCaptainRequest) returns (NewCaptainResponse);
 }

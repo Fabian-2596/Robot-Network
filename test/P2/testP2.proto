@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+message RobotStatus {
+  bool is_active = 1; 
+}
+
+message RobotRegistration {
+  int32 robot_id = 1;
+  string robot_name = 2;  
+}
+
+message HeartbeatRequest {
+  int32 robot_id = 1;
+}
+
+message HeartbeatResponse {
+  bool success = 1;
+}
+
+// Definition des Dienstes
+service RobotControl {
+  rpc RegisterRobot(RobotRegistration) returns (RobotStatus);
+  rpc GetRobotStatus(RobotRegistration) returns (RobotStatus);
+  rpc SendHeartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+}

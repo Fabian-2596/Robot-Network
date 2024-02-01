@@ -6,7 +6,6 @@ using namespace std;
 
 const string $POSTDATAPATH = "DB/POSTData.txt";
 
-// TODO: Struktur anpassen/verbessern
 struct Player
 {
   int id;
@@ -35,6 +34,7 @@ private:
   vector<string> POSTData;
 
   bool txt_editable = true;
+  int highestID = 0;
 
 public:
   DB();
@@ -45,6 +45,7 @@ public:
   string getConStatus() { return controllerStatus; };
   int getTeamSize() { return team.playerList.size(); }
   vector<string> getPOSTData() { return POSTData; }
+  int getHighestID() { return highestID; }
 
   void setCaptain(Captain capt) { this->captain = capt; }
   void setTeam(Team t) { this->team = t; }
@@ -53,6 +54,7 @@ public:
   bool setPlayerStatus(int id, bool status);
   void addPOSTData(string postData) { this->POSTData.push_back(postData); }
   void addPlayer(Player p);
+  void setHighestID(int id) { highestID = id; }
 
   // gibt 0 bei Erfolg, 1 bei Misserfolg zurück
   bool removePlayer(Player p);
@@ -124,6 +126,13 @@ vector<string> DB::readPOSTtxt()
 
 void DB::addPlayer(Player p)
 {
+  for (int i{}; i < team.playerList.size(); i++)
+  {
+    if ((team.playerList[i].id == p.id) && (team.playerList[i].name == p.name))
+    {
+      return;
+    }
+  }
   this->team.playerList.push_back(p);
   ++countPlayer;
 }

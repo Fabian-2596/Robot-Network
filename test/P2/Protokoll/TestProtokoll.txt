@@ -1,0 +1,28 @@
+alle in ms
+Es wurde auf dem gleichen System und Umgebung getestet wie in P1. Es wurde jeweils jede gRPC Interaktion der Roboter mit dem Controller
+aufgezeichnet und nachdem 100 Interaktionen durchgeführt wurden der Mittelwert gebildet. Getestet wurde jeweils auf der Roboter-Seite also
+Berechnungszeit + Übermittlungszeit. Es wurde jeweils mit 1, 2, 4 und 8 gleichzeitig laufenden Robotern getestet.
+
+1:
+RegisterRobot 1.0728
+GetRobotStatus 0.276622
+SendHeartbeat 0,301994
+
+2:
+RegisterRobot 1,6535
+GetRobotStatus 0,344999
+SendHeartbeat 0,607951
+
+4:
+RegisterRobot 2,00605
+GetRobotStatus 0,29925
+SendHeartbeat 0,473256
+
+8:
+RegisterRobot 1,4876375
+GetRobotStatus 0,30695
+SendHeartbeat 504,77425 -- spikes von 1s-5s dann aber wieder bei 0,3ms/0,4ms
+
+
+Test SendHeartBeat ohne 5s Timer:
+nach ca 5500 Anfragen innerhalb 2s stürzt der Controller ab -- tcache_thread_shutdown(): unaligned tcache chunk detected

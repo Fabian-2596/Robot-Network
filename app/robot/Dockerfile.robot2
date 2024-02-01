@@ -19,12 +19,9 @@ RUN cd paho.mqtt.cpp && \
     cmake . && \
     make && \
     make install
-
 RUN ldconfig
-
 WORKDIR /
 COPY . . 
-
 RUN protoc -I=. --cpp_out=. --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` robot.proto
 RUN g++ -std=c++11 -o robot robot.cpp robot.grpc.pb.cc robot.pb.cc -lgrpc++ -lprotobuf -lpaho-mqttpp3 -lpaho-mqtt3as -pthread
-CMD ["./robot", "2", "Clara", "Verteidiger"]
+CMD ["./robot", "Clara", "2", "Verteidiger"]
